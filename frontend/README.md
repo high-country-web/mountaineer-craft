@@ -1,8 +1,9 @@
 ## Authentication and Discord membership
 
-The entire website, including the homepage and wiki, requires Discord server
-membership. The shared Chakra UI navbar and footer remain visible on the login,
-join, and access-error screens. The Go API is retained.
+The homepage, wiki, FAQ, and server-resource links are public and work without
+login or Discord membership. Only `/me` and its subpages require a signed-in
+Discord server member. The shared Chakra UI navbar and footer are used throughout.
+The Go API is retained.
 
 Deploy the frontend and API together. Existing browser-storage JWTs are no
 longer accepted; users must sign in again. The frontend now needs a Next.js
@@ -31,9 +32,11 @@ expired sessions receive 401; unavailable membership checks receive 503.
 Every future private API group must use both `RequireSession()` and
 `RequireDiscordMember()` middleware.
 
-Next.js `src/proxy.ts` protects page HTML and Next.js data requests. The shared
-client gate also checks on navigation, tab focus, and once per minute while
-visible, preventing cached client routes from bypassing the membership screen.
+Next.js `src/proxy.ts` protects account HTML and Next.js account-data requests.
+`requiresMembership()` in `src/lib/auth.ts` defines protected account routes;
+add future private page roots there. The shared client gate also checks on
+navigation, tab focus, and once per minute while visible. Public pages render
+immediately, even if optional session checks fail or the API is unavailable.
 The login/OAuth, Discord join, logout, and temporary error pages are accessible
 without membership. The Discord invite opens separately; “I’ve joined — check
 again” verifies current membership without repeating OAuth. Leaving the server
@@ -46,11 +49,11 @@ No bot token or additional scope is required.
 ## Wiki
 
 The website reads Markdown files from the repository's `wiki/` folder on the
-server after the membership check. For example, `wiki/getting-started.md` is served at
+server. For example, `wiki/getting-started.md` is served at
 `/wiki/getting-started`, and `wiki/guides/grief-prevention.md` is served at
 `/wiki/guides/grief-prevention`. New `.md` files automatically appear in the wiki
-index and navigation. Deploy updated articles with the website. The wiki uses
-private, non-cacheable server responses, rather than public static article JSON.
+index and navigation. Deploy updated articles with the website. Wiki article
+pages and their Next.js data responses are available to everyone.
 
 Optional YAML front matter supplies a `title` and `description`. Without a title,
 the filename is used. Relative links to other Markdown files are converted to

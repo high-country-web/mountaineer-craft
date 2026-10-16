@@ -61,8 +61,19 @@ const request = (path, token, options = {}) => fetch(base + path, {
   headers: { ...(token ? { Cookie: `mc_session=${token}` } : {}), ...options.headers },
 });
 
-test('all website pages and legacy redirects require a verified member', async () => {
-  for (const path of ['/', '/wiki', '/wiki/getting-started', '/wiki/guides/grief-prevention', '/me', '/faq', '/map', '/analytics', '/discord']) {
+test('public pages stay accessible without login, membership, or a working auth service', async () => {
+  for (const path of ['/', '/wiki', '/wiki/getting-started', '/wiki/guides/grief-prevention', '/faq']) {
+    for (const token of [undefined, 'test-nonmember', 'test-unavailable', 'expired']) {
+      const result = await request(path, token);
+      assert.equal(result.status, 200, `${path} was blocked for ${token || 'anonymous visitor'}`);
+      assert.equal(result.headers.get('location'), null);
+      assert.ok(!(await result.text()).includes('Checking your access'), 'public content was hidden behind the client gate');
+    }
+  }
+});
+
+test('account pages still require a verified member', async () => {
+  for (const path of ['/me', '/me/settings']) {
     for (const [token, destination] of [[undefined, '/login'], ['test-nonmember', '/join-discord']]) {
       const result = await request(path, token);
       assert.equal(result.status, 307, `${path}: ${await result.text()}`);
@@ -71,16 +82,31 @@ test('all website pages and legacy redirects require a verified member', async (
   }
 });
 
-test('Next.js data URLs cannot expose wiki content without membership', async () => {
+test('public wiki data is available without membership', async () => {
   for (const token of [undefined, 'test-nonmember']) {
     const result = await request(`/_next/data/${buildID}/wiki/getting-started.json`, token, { headers: { 'x-nextjs-data': '1' } });
-    const text = await result.text();
-    assert.ok(result.status === 307 || (result.status === 200 && text.includes('__N_REDIRECT')), `unexpected data result: ${result.status} ${text}`);
-    assert.ok(!text.includes('First Join') && !text.includes('/wrp hub'), 'private article leaked');
+    assert.equal(result.status, 200);
+    assert.match((await result.json()).pageProps.article.html, /First Join/);
   }
 });
 
-test('a member can read private wiki pages and nested guides', async () => {
+test('account data requests cannot bypass membership checks', async () => {
+  for (const token of [undefined, 'test-nonmember']) {
+    const result = await request(`/_next/data/${buildID}/me.json`, token, { headers: { 'x-nextjs-data': '1' } });
+    const text = await result.text();
+    assert.ok(result.status === 307 || (result.status === 200 && text.includes('__N_REDIRECT')), `account data was not gated: ${result.status} ${text}`);
+  }
+});
+
+test('server-resource links work without login', async () => {
+  for (const [path, destination] of [['/discord', 'https://discord.gg/57E8HMCnGw'], ['/map', 'https://map.mountaineercraft.net/'], ['/analytics', 'https://analytics.mountaineercraft.net/']]) {
+    const result = await request(path);
+    assert.equal(result.status, 307);
+    assert.equal(new URL(result.headers.get('location')).href, destination);
+  }
+});
+
+test('wiki pages and nested guides render correctly', async () => {
   for (const path of ['/wiki', '/wiki/getting-started', '/wiki/guides/grief-prevention']) {
     const result = await request(path, 'test-member');
     assert.equal(result.status, 200);
@@ -108,7 +134,7 @@ test('expired sessions and outages fail closed without a redirect loop', async (
   const expired = await request('/me', 'expired');
   assert.equal(new URL(expired.headers.get('location'), base).pathname, '/login');
   assert.match(expired.headers.get('set-cookie'), /Max-Age=0/);
-  const unavailable = await request('/wiki', 'test-unavailable');
+  const unavailable = await request('/me', 'test-unavailable');
   assert.equal(new URL(unavailable.headers.get('location'), base).pathname, '/access-unavailable');
   assert.equal(unavailable.headers.get('set-cookie'), null);
   for (const path of ['/login', '/join-discord', '/access-unavailable']) assert.equal((await request(path)).status, 200);
@@ -142,9 +168,9 @@ test('OAuth rejects missing or mismatched state before accepting a session', asy
   }
 });
 
-test('OAuth uses HttpOnly cookies and routes members and nonmembers correctly', async () => {
-  for (const [code, expected] of [['member-code', '/wiki/getting-started'], ['nonmember-code', '/join-discord']]) {
-    const login = await beginLogin('/wiki/getting-started');
+test('OAuth uses HttpOnly cookies and only requires membership for account destinations', async () => {
+  for (const [code, next, expected] of [['member-code', '/wiki/getting-started', '/wiki/getting-started'], ['nonmember-code', '/wiki/getting-started', '/wiki/getting-started'], ['nonmember-code', '/me', '/join-discord']]) {
+    const login = await beginLogin(next);
     const result = await request(`/oauth/discord?code=${code}&state=${encodeURIComponent(login.state)}`, undefined, { headers: { Cookie: login.cookies } });
     assert.equal(result.status, 307);
     assert.equal(new URL(result.headers.get('location'), base).pathname, expected);

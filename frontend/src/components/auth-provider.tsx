@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useRouter } from "next/router";
 import { Flex, Spinner, Text } from "@chakra-ui/react";
-import { publicPages, safeReturnTo } from "@/lib/auth";
+import { publicPages, requiresMembership, safeReturnTo } from "@/lib/auth";
 import type { ProfileUser } from "@/components/profile";
 
 type Session = { user: ProfileUser | null; checkedPath: string | null; loading: boolean };
@@ -20,6 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     let controller: AbortController | undefined;
     let active = true;
+    const protectedPage = requiresMembership(router.pathname);
     async function verify() {
       controller?.abort();
       controller = new AbortController();
@@ -29,14 +30,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const response = await fetch("/api/auth/session", { cache: "no-store", signal });
         if (!active || signal.aborted) return;
-        if (response.status === 401) { await router.replace(`/login?next=${next}`); return; }
-        if (response.status === 403) { await router.replace(`/join-discord?next=${next}`); return; }
+        if (response.status === 401 || response.status === 403) {
+          if (protectedPage) await router.replace(`${response.status === 401 ? "/login" : "/join-discord"}?next=${next}`);
+          else setSession({ user: null, checkedPath: router.asPath, loading: false });
+          return;
+        }
         if (!response.ok) throw new Error("Membership check unavailable");
         const user = await response.json();
         if (user.in_guild !== true) throw new Error("Invalid membership response");
         if (active && !signal.aborted) setSession({ user, checkedPath: router.asPath, loading: false });
       } catch {
-        if (active && !signal.aborted) await router.replace(`/access-unavailable?next=${next}`);
+        if (active && !signal.aborted) {
+          if (protectedPage) await router.replace(`/access-unavailable?next=${next}`);
+          else setSession({ user: null, checkedPath: router.asPath, loading: false });
+        }
       }
     }
     void verify();
@@ -52,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function MemberGate({ children }: { children: ReactNode }) {
   const router = useRouter();
   const session = useSession();
-  if (publicPages.has(router.pathname)) return children;
+  if (!requiresMembership(router.pathname)) return children;
   if (!session.loading && session.user && session.checkedPath === router.asPath) return children;
   return <Flex as="main" role="status" aria-live="polite" minH="calc(100dvh - 94px)" align="center" justify="center" gap={4} bg="#090909" color="#cccccc" px={5}><Spinner color="#ffcc00" /><Text fontSize="16px">Checking your access…</Text></Flex>;
 }

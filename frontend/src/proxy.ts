@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookie, fetchMemberSession, SESSION_COOKIE } from "@/lib/auth-server";
-
-const publicPaths = new Set(["/login", "/oauth/discord", "/join-discord", "/logout", "/access-unavailable", "/api/auth/login", "/api/auth/logout", "/api/auth/session"]);
+import { requiresMembership } from "@/lib/auth";
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname.replace(/\/$/, "") || "/";
-  if (publicPaths.has(pathname)) return NextResponse.next();
+  const destinations: Record<string, string> = { "/discord": "https://discord.gg/57E8HMCnGw", "/map": "https://map.mountaineercraft.net", "/analytics": "https://analytics.mountaineercraft.net" };
+  if (destinations[pathname]) return NextResponse.redirect(destinations[pathname]);
+  if (!requiresMembership(pathname)) return NextResponse.next();
   const next = pathname + request.nextUrl.search;
   const redirect = (destination: string) => {
     const url = new URL(destination, request.url);
@@ -27,8 +28,6 @@ export async function proxy(request: NextRequest) {
     if (!response.ok) return redirect("/access-unavailable");
     const user = await response.json();
     if (user.in_guild !== true) return redirect("/access-unavailable");
-    const destinations: Record<string, string> = { "/discord": "https://discord.gg/57E8HMCnGw", "/map": "https://map.mountaineercraft.net", "/analytics": "https://analytics.mountaineercraft.net" };
-    if (destinations[pathname]) return NextResponse.redirect(destinations[pathname]);
     const result = NextResponse.next();
     result.headers.set("Cache-Control", "private, no-store");
     return result;
@@ -37,8 +36,8 @@ export async function proxy(request: NextRequest) {
   }
 }
 
-// Page HTML and Next.js data requests are protected; only public branding and
-// framework assets bypass the gate. Do not exempt /_next/data or /api broadly.
+// Account HTML and normalized Next.js account-data requests remain protected.
+// Public browsing and server-resource redirects never require authentication.
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon\\.ico|favicon-16x16\\.png|favicon-32x32\\.png|server-icon\\.png|logo\\.png|minecraftDot\\.png|apple-touch-icon\\.png|android-chrome-192x192\\.png|android-chrome-512x512\\.png).*)"],
+  matcher: ["/me/:path*", "/discord", "/map", "/analytics"],
 };

@@ -3,6 +3,7 @@ import { API_BASE_URL, cookie, readCookie, RETURN_COOKIE, safeReturnTo, SESSION_
 import AccessScreen from "@/components/access-screen";
 import { Button } from "@chakra-ui/react";
 import NextLink from "next/link";
+import { requiresMembership } from "@/lib/auth";
 
 export const getServerSideProps: GetServerSideProps<{ failed: true }> = async ({ req, res, query }) => {
   res.setHeader("Cache-Control", "no-store");
@@ -17,7 +18,7 @@ export const getServerSideProps: GetServerSideProps<{ failed: true }> = async ({
     const session = await response.json();
     if (typeof session.token !== "string" || !session.token || typeof session.in_guild !== "boolean" || !Number.isFinite(session.expires_in) || session.expires_in <= 0) return { props: { failed: true } };
     res.setHeader("Set-Cookie", [...cleared, cookie(SESSION_COOKIE, session.token, Math.min(86400, Math.floor(session.expires_in)))]);
-    return { redirect: { destination: session.in_guild ? returnTo : `/join-discord?next=${encodeURIComponent(returnTo)}`, permanent: false } };
+    return { redirect: { destination: session.in_guild || !requiresMembership(returnTo) ? returnTo : `/join-discord?next=${encodeURIComponent(returnTo)}`, permanent: false } };
   } catch {
     return { props: { failed: true } };
   }
