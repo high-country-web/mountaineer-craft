@@ -27,7 +27,7 @@ func Run() {
 
 	router.NoRoute(func(c *gin.Context) {
 		c.JSON(404, gin.H{
-			"error": true,
+			"error":   true,
 			"message": "Route not found",
 		})
 	})
@@ -57,8 +57,8 @@ func getRoutes() {
 
 	auth := router.Group("/auth")
 	auth.POST("/discord", authRoute)
+	auth.POST("/logout", RequireSession(), logoutRoute)
 
 	me := router.Group("/me")
 	meRoute(me)
 }
-

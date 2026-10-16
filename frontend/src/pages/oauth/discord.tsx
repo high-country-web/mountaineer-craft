@@ -1,107 +1,28 @@
-import { Flex, Box, Heading, Spinner } from "@chakra-ui/react";
-import Head from "next/head";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
+import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
+import { API_BASE_URL, cookie, readCookie, RETURN_COOKIE, safeReturnTo, SESSION_COOKIE, STATE_COOKIE, validOAuthState } from "@/lib/auth-server";
+import AccessScreen from "@/components/access-screen";
+import { Button } from "@chakra-ui/react";
+import NextLink from "next/link";
 
-export default function OAuthDiscord() {
-  const router = useRouter();
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<boolean | null>(null);
+export const getServerSideProps: GetServerSideProps<{ failed: true }> = async ({ req, res, query }) => {
+  res.setHeader("Cache-Control", "no-store");
+  const expected = readCookie(req.headers.cookie, STATE_COOKIE);
+  const returnTo = safeReturnTo(readCookie(req.headers.cookie, RETURN_COOKIE));
+  const cleared = [cookie(STATE_COOKIE, "", 0), cookie(RETURN_COOKIE, "", 0)];
+  res.setHeader("Set-Cookie", cleared);
+  if (!validOAuthState(expected, query.state) || typeof query.code !== "string" || query.error) return { props: { failed: true } };
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/discord`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: query.code }), cache: "no-store", signal: AbortSignal.timeout(30000) });
+    if (!response.ok) return { props: { failed: true } };
+    const session = await response.json();
+    if (typeof session.token !== "string" || !session.token || typeof session.in_guild !== "boolean" || !Number.isFinite(session.expires_in) || session.expires_in <= 0) return { props: { failed: true } };
+    res.setHeader("Set-Cookie", [...cleared, cookie(SESSION_COOKIE, session.token, Math.min(86400, Math.floor(session.expires_in)))]);
+    return { redirect: { destination: session.in_guild ? returnTo : `/join-discord?next=${encodeURIComponent(returnTo)}`, permanent: false } };
+  } catch {
+    return { props: { failed: true } };
+  }
+};
 
-  useEffect(() => {
-    if (!router.isReady) return;
-
-    const { code, state } = router.query;
-
-    if (!code || typeof code !== "string") {
-      setMessage("Missing Discord authorization code.");
-      setError(true);
-      return;
-    }
-
-    const storedState = sessionStorage.getItem("discord_oauth_state");
-    if (storedState && state !== storedState) {
-      sessionStorage.removeItem("auth_token");
-      sessionStorage.removeItem("user");
-    }
-
-    // Call API
-    fetch("https://api.mountaineercraft.net/auth/discord", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code }),
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          const msg = data?.error || "Authentication failed";
-          setMessage(msg);
-          setError(true);
-          throw new Error(msg);
-        }
-        return res.json();
-      })
-      .then((data) => {
-        // Store JWT token in sessionStorage or localStorage
-        if (data.token) {
-          sessionStorage.setItem("auth_token", data.token);
-        }
-
-        setMessage("Login successful! Redirecting...");
-        setTimeout(() => router.push("/me"), 1500);
-      })
-      .catch(() => {
-        setMessage("Discord authentication failed.");
-        setError(true);
-      });
-  }, [router.isReady, router.query, router]);
-
-  return (
-    <>
-      <Head>
-        <title>OAuth - Mountaineer Craft</title>
-      </Head>
-
-      <Flex
-        minH="100vh"
-        align="center"
-        justify="center"
-        bg="gray.900"
-        color="white"
-        px={6}
-        textAlign="center"
-      >
-        <Box>
-          <Heading fontSize={{ base: "xl", md: "3xl" }} mb={4}>
-            {!message && (
-              <>
-                <br />
-                <Spinner
-                  color="colorPalette.600"
-                  colorPalette="yellow"
-                  size="xl"
-                  ml={4}
-                />
-                <br />
-                <br />
-              </>
-            )}
-            {message || "Processing your Discord authentication..."}
-            {error && (
-              <>
-                <br />
-                <Box mt={5} color="red.500">
-                  Click{" "}
-                  <a href="/login" style={{ textDecoration: "underline" }}>
-                    here
-                  </a>{" "}
-                  to try again.
-                </Box>
-              </>
-            )}
-          </Heading>
-        </Box>
-      </Flex>
-    </>
-  );
+export default function OAuthDiscord(_props: InferGetServerSidePropsType<typeof getServerSideProps>) {
+  return <AccessScreen title="Sign-in didn’t finish" description="Your Discord sign-in expired, was cancelled, or couldn’t be completed. Please try again."><Button asChild bg="#ffcc00" color="black"><NextLink href="/login">Try signing in again</NextLink></Button></AccessScreen>;
 }

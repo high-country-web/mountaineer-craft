@@ -5,6 +5,7 @@
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
+    "test:auth": "node --test tests/auth.integration.test.mjs",
     "lint": "eslint"
   },
   "dependencies": {

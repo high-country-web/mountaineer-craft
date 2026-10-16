@@ -1,58 +1,17 @@
-import { Box, Flex, Heading, Spinner } from "@chakra-ui/react";
-import Head from "next/head";
-import { useEffect } from "react";
 import { useRouter } from "next/router";
+import { Button, Text } from "@chakra-ui/react";
+import { FaDiscord } from "react-icons/fa";
+import AccessScreen from "@/components/access-screen";
+import { safeReturnTo } from "@/lib/auth";
 
 export default function Login() {
   const router = useRouter();
-
-  useEffect(() => {
-    // 1. Check if already logged in
-    const token = sessionStorage.getItem("auth_token");
-
-    if (token) {
-      router.replace("/me");
-      return;
-    }
-
-    // 2. Begin Discord OAuth
-    const state = crypto.randomUUID();
-    sessionStorage.setItem("discord_oauth_state", state);
-
-    const params = new URLSearchParams({
-      client_id: "1465494022150684769",
-      response_type: "code",
-      redirect_uri: "https://mountaineercraft.net/oauth/discord",
-      scope: "identify guilds email",
-      state,
-    });
-
-    window.location.href = `https://discord.com/oauth2/authorize?${params.toString()}`;
-  }, [router]);
-
+  const next = safeReturnTo(router.query.next);
   return (
-    <>
-      <Head>
-        <title>Login - Mountaineer Craft</title>
-      </Head>
-
-      <Flex
-        minH="100vh"
-        align="center"
-        justify="center"
-        bg="gray.900"
-        color="white"
-        px={6}
-        textAlign="center"
-      >
-        <Box>
-          <Spinner color="colorPalette.600" colorPalette="yellow" size="xl" />
-          <br />
-          <Heading fontSize={{ base: "xl", md: "3xl" }} mb={4}>
-            Redirecting you to Discord for authentication...
-          </Heading>
-        </Box>
-      </Flex>
-    </>
+    <AccessScreen title="Your community starts here" description="Sign in with Discord to access Mountaineer Craft. You’ll need to be a member of our Discord server to continue.">
+      <Button asChild bg="#ffcc00" color="black" size="lg" _hover={{ bg: "#ffdb4d" }}><a href={`/api/auth/login?next=${encodeURIComponent(next)}`}><FaDiscord />Sign in with Discord</a></Button>
+      <Button asChild variant="outline" borderColor="#ffffff25" color="#f5f5f5" size="lg" _hover={{ bg: "#ffffff08" }}><a href="https://links.mountaineercraft.net/discord" target="_blank" rel="noopener noreferrer">Join our Discord ↗</a></Button>
+      <Text color="#999999" fontSize="13px" lineHeight="1.7" textAlign="center">Use the same Discord account you use in our server.</Text>
+    </AccessScreen>
   );
 }
