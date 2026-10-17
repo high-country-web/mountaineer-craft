@@ -4,7 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"log"
+	"net"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -37,6 +40,24 @@ func newPlanStatusClient(baseURL, username, password, server string) *planStatus
 		client: &http.Client{Jar: jar, Timeout: 5 * time.Second, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}}
 }
 
+// Describe network failures without logging URLs, credentials, or response bodies.
+func planTransportError(operation string, err error) error {
+	var dnsErr *net.DNSError
+	var netErr net.Error
+	switch {
+	case errors.Is(err, context.DeadlineExceeded):
+		return fmt.Errorf("analytics %s timed out", operation)
+	case errors.Is(err, context.Canceled):
+		return fmt.Errorf("analytics %s canceled", operation)
+	case errors.As(err, &dnsErr):
+		return fmt.Errorf("analytics %s failed: DNS lookup failed", operation)
+	case errors.As(err, &netErr) && netErr.Timeout():
+		return fmt.Errorf("analytics %s timed out", operation)
+	default:
+		return fmt.Errorf("analytics %s failed: connection or TLS error (%T)", operation, err)
+	}
+}
+
 func (p *planStatusClient) login(ctx context.Context) error {
 	form := url.Values{"user": {p.username}, "password": {p.password}}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.baseURL+"/auth/login", strings.NewReader(form.Encode()))
@@ -46,14 +67,20 @@ func (p *planStatusClient) login(ctx context.Context) error {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	resp, err := p.client.Do(req)
 	if err != nil {
-		return errors.New("analytics login unavailable")
+		return planTransportError("login", err)
 	}
 	defer resp.Body.Close()
 	var result struct {
 		Success bool `json:"success"`
 	}
-	if resp.StatusCode != http.StatusOK || json.NewDecoder(io.LimitReader(resp.Body, 4096)).Decode(&result) != nil || !result.Success {
-		return errors.New("analytics login failed")
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("analytics login failed: upstream HTTP %d", resp.StatusCode)
+	}
+	if json.NewDecoder(io.LimitReader(resp.Body, 4096)).Decode(&result) != nil {
+		return errors.New("analytics login failed: expected JSON success response")
+	}
+	if !result.Success {
+		return errors.New("analytics login rejected credentials (success=false)")
 	}
 	return nil
 }
@@ -69,20 +96,23 @@ func (p *planStatusClient) count(ctx context.Context) (int, bool, error) {
 	}
 	resp, err := p.client.Do(req)
 	if err != nil {
-		return 0, false, errors.New("analytics unavailable")
+		return 0, false, planTransportError("player count request", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == 302 || resp.StatusCode == 401 || resp.StatusCode == 403 {
-		return 0, true, errors.New("analytics authentication required")
+		return 0, true, fmt.Errorf("analytics authentication required: upstream HTTP %d", resp.StatusCode)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return 0, false, fmt.Errorf("analytics player count failed: upstream HTTP %d", resp.StatusCode)
 	}
 	var count *int
 	decoder := json.NewDecoder(io.LimitReader(resp.Body, 4096))
-	if resp.StatusCode != http.StatusOK || decoder.Decode(&count) != nil || count == nil || *count < 0 {
-		return 0, false, errors.New("invalid analytics response")
+	if decoder.Decode(&count) != nil || count == nil || *count < 0 {
+		return 0, false, errors.New("invalid analytics player count: expected a nonnegative JSON integer")
 	}
 	var extra any
 	if decoder.Decode(&extra) != io.EOF {
-		return 0, false, errors.New("invalid analytics response")
+		return 0, false, errors.New("invalid analytics player count: trailing data after JSON integer")
 	}
 	return *count, false, nil
 }
@@ -96,7 +126,7 @@ func (p *planStatusClient) status(ctx context.Context) (serverStatus, error) {
 	var err error
 	var count int
 	if p.password == "" {
-		err = errors.New("analytics is not configured")
+		err = errors.New("analytics is not configured: PLAN_API_PASSWORD is missing")
 	} else {
 		var needsLogin bool
 		count, needsLogin, err = p.count(ctx)
@@ -110,6 +140,7 @@ func (p *planStatusClient) status(ctx context.Context) (serverStatus, error) {
 	p.lastErr = err
 	if err != nil {
 		// Back off on failures too, including invalid credentials.
+		log.Printf("[ERROR] GET /status: %v; retrying after 30s", err)
 		p.cacheUntil = time.Now().Add(30 * time.Second)
 		return serverStatus{}, err
 	}

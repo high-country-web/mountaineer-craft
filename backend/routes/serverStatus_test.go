@@ -1,8 +1,11 @@
 package routes
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -11,6 +14,47 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+func TestPlanStatusLogsFailureOnceWithoutSecrets(t *testing.T) {
+	var output bytes.Buffer
+	previous := log.Writer()
+	log.SetOutput(&output)
+	t.Cleanup(func() { log.SetOutput(previous) })
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/auth/login" {
+			w.WriteHeader(http.StatusForbidden)
+			fmt.Fprint(w, "private upstream body")
+			return
+		}
+		http.Redirect(w, r, "/login", http.StatusFound)
+	}))
+	defer upstream.Close()
+	p := newPlanStatusClient(upstream.URL, "private-user", "private-password", "")
+	for range 3 {
+		if _, err := p.status(context.Background()); err == nil {
+			t.Fatal("expected login failure")
+		}
+	}
+	logged := output.String()
+	if strings.Count(logged, "[ERROR] GET /status") != 1 || !strings.Contains(logged, "login failed: upstream HTTP 403") {
+		t.Fatalf("missing diagnostic or repeated log: %s", logged)
+	}
+	for _, private := range []string{upstream.URL, "private-user", "private-password", "private upstream body"} {
+		if strings.Contains(logged, private) {
+			t.Fatalf("log contains private data: %s", private)
+		}
+	}
+}
+
+func TestPlanTransportErrorDoesNotIncludeURLOrUnderlyingMessage(t *testing.T) {
+	err := planTransportError("login", errors.New("https://private-user:private-password@example.test private body"))
+	if strings.Contains(err.Error(), "private") || !strings.Contains(err.Error(), "login failed") {
+		t.Fatalf("unexpected diagnostic: %v", err)
+	}
+	if got := planTransportError("login", context.DeadlineExceeded).Error(); !strings.Contains(got, "timed out") {
+		t.Fatalf("missing timeout diagnostic: %s", got)
+	}
+}
 
 func TestPlanStatusCookieLoginCacheAndExpiry(t *testing.T) {
 	logins, reads := 0, 0

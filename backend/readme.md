@@ -21,6 +21,8 @@ Plan uses form login at `POST /auth/login` with `user` and `password`, followed 
 
 A count of zero means no players online; it does not establish that the Minecraft server is offline. This display reports player activity, not a separate Minecraft reachability probe. `/v1/playersTable` contains historical players and must not be used as an online player count.
 
+Status failures are logged to the Go backend console (stderr) as `[ERROR] GET /status` with the failed operation and reason, including upstream HTTP codes, missing `PLAN_API_PASSWORD`, timeouts, and invalid response formats. Each failed refresh logs once; requests served during the 30-second failure backoff do not repeat the log. Credentials, cookies, upstream bodies, and configured URLs are omitted. The public JSON remains generic. The Next.js server console also logs backend HTTP failures, invalid payloads, and connection failures for `/api/server/status`; a backend HTTP 503 should be investigated in the Go console for the Plan-specific cause.
+
 ## Discord account links
 
 Plan's DiscordSRV extension can report a linked-account boolean and Discord username for a Minecraft UUID through player extension data. Its default fields do not expose the immutable Discord user ID. Securely associating a signed-in website user with a Minecraft account needs an authoritative Discord ID to Minecraft UUID mapping from DiscordSRV or another trusted integration. Do not match mutable usernames or use analytics as proof of current Discord server membership. Player profiles and account links are not exposed by the public status route.
