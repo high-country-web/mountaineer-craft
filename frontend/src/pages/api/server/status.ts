@@ -6,7 +6,8 @@ export default async function status(req: NextApiRequest, res: NextApiResponse) 
   res.setHeader("Cache-Control", "no-store");
   if (req.method !== "GET") { res.setHeader("Allow", "GET"); return res.status(405).end(); }
   try {
-    const response = await fetch(`${API_BASE_URL}/status`, { signal: AbortSignal.timeout(13000), redirect: "error" });
+    // Workers supports manual/follow redirects; reject 3xx via response.ok below.
+    const response = await fetch(`${API_BASE_URL}/status`, { cache: "no-store", signal: AbortSignal.timeout(13000), redirect: "manual" });
     if (!response.ok) {
       console.error(`[server-status] GET backend /status returned HTTP ${response.status}`);
       return res.status(503).json({ error: "server_status_unavailable" });
