@@ -10,6 +10,11 @@
 !.yarn/releases
 !.yarn/versions
 */.next
+frontend/.open-next/
+frontend/.wrangler/
+frontend/src/generated/wiki.json
+.dev.vars*
+!.dev.vars.example
 # testing
 /coverage
 

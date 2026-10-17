@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookie, fetchMemberSession, SESSION_COOKIE } from "@/lib/auth-server";
 import { requiresMembership } from "@/lib/auth";
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname.replace(/\/$/, "") || "/";
   const destinations: Record<string, string> = { "/discord": "https://discord.gg/57E8HMCnGw", "/map": "https://map.mountaineercraft.net", "/analytics": "https://analytics.mountaineercraft.net" };
   if (destinations[pathname]) return NextResponse.redirect(destinations[pathname]);

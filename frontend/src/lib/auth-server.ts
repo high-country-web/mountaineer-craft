@@ -1,4 +1,3 @@
-import { timingSafeEqual } from "node:crypto";
 export { safeReturnTo } from "./auth";
 
 export const SESSION_COOKIE = "mc_session";
@@ -14,12 +13,6 @@ export function readCookie(header: string | undefined, name: string): string | u
 
 export function cookie(name: string, value: string, maxAge: number) {
   return `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${process.env.NODE_ENV === "production" ? "; Secure" : ""}`;
-}
-
-export function validOAuthState(expected: string | undefined, actual: unknown): boolean {
-  if (!expected || typeof actual !== "string") return false;
-  const left = Buffer.from(expected), right = Buffer.from(actual);
-  return left.length === right.length && timingSafeEqual(left, right);
 }
 
 export function fetchMemberSession(token: string) {

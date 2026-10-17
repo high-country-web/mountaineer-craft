@@ -1,5 +1,6 @@
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
-import { API_BASE_URL, cookie, readCookie, RETURN_COOKIE, safeReturnTo, SESSION_COOKIE, STATE_COOKIE, validOAuthState } from "@/lib/auth-server";
+import { API_BASE_URL, cookie, readCookie, RETURN_COOKIE, safeReturnTo, SESSION_COOKIE, STATE_COOKIE } from "@/lib/auth-server";
+import { validOAuthState } from "@/lib/oauth-state";
 import AccessScreen from "@/components/access-screen";
 import { Button } from "@chakra-ui/react";
 import NextLink from "next/link";

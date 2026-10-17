@@ -1,3 +1,40 @@
+## Cloudflare Workers / OpenNext
+
+The OpenNext setup is already included; you do not need to run `migrate` again.
+Run commands from `frontend/`, where this app's `package.json` lives. Use Node.js
+22 or newer (Node 24 is recommended). OpenNext 1.20.12 requires Next.js 16.4.1
+or newer; this project uses Next.js 16.4.2 and the matching Next.js packages.
+
+```powershell
+cd frontend
+npm install
+npm run preview
+```
+
+- `npm run dev`: normal Next.js development server.
+- `npm run build:cloudflare`: build the Cloudflare Worker without deploying.
+- `npm run preview`: build and run locally in the Workers runtime.
+- `npm run deploy`: build and publish the Worker to your Cloudflare account.
+- `npm run cf-typegen`: generate Cloudflare binding types.
+- `npm run build` followed by `npm run test:auth`: run the production Node.js
+  authentication regression tests.
+
+`wrangler.jsonc` defines the Worker and non-secret production settings. The Go
+API stays separately hosted; its Discord client secret, JWT secret, and Redis
+credentials belong on the API server, not in the Worker configuration. Confirm
+the Discord redirect URL and API origin before deployment. This setup does not
+provision an R2 bucket or require ISR caching.
+
+For local Worker development, copy `.dev.vars.example` to `.dev.vars` and use
+Next.js `.env.local` files for local application settings. Keep those files out
+of Git. OpenNext's Windows support is limited; use WSL or Linux CI if native
+Windows build/preview tools fail.
+
+The account gate uses Edge-compatible `src/middleware.ts`, because OpenNext's
+Node middleware/`proxy.ts` support is experimental. Next.js 16 prints a middleware
+deprecation notice; keep this convention until supported Node middleware is
+available in OpenNext. Public browsing and account protection are unchanged.
+
 ## Authentication and Discord membership
 
 The homepage, wiki, FAQ, and server-resource links are public and work without
@@ -32,7 +69,7 @@ expired sessions receive 401; unavailable membership checks receive 503.
 Every future private API group must use both `RequireSession()` and
 `RequireDiscordMember()` middleware.
 
-Next.js `src/proxy.ts` protects account HTML and Next.js account-data requests.
+Next.js `src/middleware.ts` protects account HTML and Next.js account-data requests.
 `requiresMembership()` in `src/lib/auth.ts` defines protected account routes;
 add future private page roots there. The shared client gate also checks on
 navigation, tab focus, and once per minute while visible. Public pages render
@@ -48,11 +85,14 @@ No bot token or additional scope is required.
 
 ## Wiki
 
-The website reads Markdown files from the repository's `wiki/` folder on the
-server. For example, `wiki/getting-started.md` is served at
+The build bundles Markdown files from the repository's `wiki/` folder for the
+server, so Workers do not need access to a local filesystem. For example,
+`wiki/getting-started.md` is served at
 `/wiki/getting-started`, and `wiki/guides/grief-prevention.md` is served at
 `/wiki/guides/grief-prevention`. New `.md` files automatically appear in the wiki
-index and navigation. Deploy updated articles with the website. Wiki article
+index and navigation. The `prebuild` and `predev` hooks generate the bundle
+automatically. While a dev server is running, use `npm run wiki:generate` after
+editing Markdown. Deploy updated articles with the website. Wiki article
 pages and their Next.js data responses are available to everyone.
 
 Optional YAML front matter supplies a `title` and `description`. Without a title,

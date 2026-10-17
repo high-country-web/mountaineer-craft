@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mountaineer-craft",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-16",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    { "binding": "WORKER_SELF_REFERENCE", "service": "mountaineer-craft" }
+  ],
+  "images": { "binding": "IMAGES" },
+  "vars": {
+    "API_BASE_URL": "https://api.mountaineercraft.net",
+    "DISCORD_CLIENT_ID": "1465494022150684769",
+    "DISCORD_REDIRECT_URI": "https://mountaineercraft.net/oauth/discord"
+  }
+}
