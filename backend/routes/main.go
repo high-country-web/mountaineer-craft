@@ -54,6 +54,7 @@ func Run() {
 func getRoutes() {
 	main := router.Group("/")
 	mainRoute(main)
+	main.GET("/status", serverStatusRoute())
 
 	auth := router.Group("/auth")
 	auth.POST("/discord", authRoute)

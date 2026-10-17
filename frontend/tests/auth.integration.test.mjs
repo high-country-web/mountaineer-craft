@@ -9,11 +9,13 @@ import { readFile } from 'node:fs/promises';
 const states = new Map([['test-member', true], ['test-nonmember', false]]);
 let app, backend, base, buildID;
 let output = '';
+let statusPayload = { players_online: 7, updated_at: '2026-10-16T12:00:00Z', private_player_data: 'must not escape' };
 
 before(async () => {
   buildID = (await readFile('.next/BUILD_ID', 'utf8')).trim();
   backend = http.createServer(async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
+    if (req.url === '/status') return res.end(JSON.stringify(statusPayload));
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (req.url === '/auth/discord' && req.method === 'POST') {
       let input = ''; for await (const chunk of req) input += chunk;
@@ -59,6 +61,24 @@ after(async () => {
 const request = (path, token, options = {}) => fetch(base + path, {
   redirect: 'manual', ...options,
   headers: { ...(token ? { Cookie: `mc_session=${token}` } : {}), ...options.headers },
+});
+
+test('server status is public and exposes only validated aggregate fields', async () => {
+  for (const token of [undefined, 'test-nonmember']) {
+    const response = await request('/api/server/status', token);
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { players_online: 7, updated_at: '2026-10-16T12:00:00Z' });
+  }
+  const valid = statusPayload;
+  try {
+    for (const payload of [null, { players_online: -1, updated_at: valid.updated_at }, { players_online: 2, updated_at: 'invalid' }]) {
+      statusPayload = payload;
+      const response = await request('/api/server/status');
+      assert.equal(response.status, 503);
+      assert.deepEqual(await response.json(), { error: 'server_status_unavailable' });
+    }
+  } finally { statusPayload = valid; }
+  assert.equal((await request('/api/server/status', undefined, { method: 'POST' })).status, 405);
 });
 
 test('public pages stay accessible without login, membership, or a working auth service', async () => {

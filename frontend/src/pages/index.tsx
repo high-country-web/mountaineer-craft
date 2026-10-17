@@ -1,4 +1,5 @@
 import Head from "next/head";
+import ServerActivity from "@/components/server-status";
 import { useEffect, useState } from "react";
 import { LuArrowDown, LuArrowRight, LuChartNoAxesCombined, LuCheck, LuCopy, LuMap, LuPickaxe } from "react-icons/lu";
 import { FaDiscord } from "react-icons/fa";
@@ -8,7 +9,6 @@ import type { SystemStyleObject } from "@chakra-ui/react";
 const JAVA_ADDRESS = "play.mountaineercraft.net";
 const BEDROCK_ADDRESS = "bedrock.mountaineercraft.net";
 const BEDROCK_PORT = "19132";
-type ServerStatus = { state: "checking" | "online" | "offline" | "unavailable"; players?: number };
 
 const gold = "#ffcc00";
 const muted = "#aaaaaa";
@@ -31,23 +31,8 @@ const resources = [
 ];
 
 export default function Home() {
-  const [status, setStatus] = useState<ServerStatus>({ state: "checking" });
   const [copied, setCopied] = useState<string | null>(null);
   const [copyError, setCopyError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 10000);
-    fetch(`https://api.mcsrvstat.us/2/${JAVA_ADDRESS}`, { signal: controller.signal })
-      .then((res) => {
-        if (!res.ok) throw new Error("Status unavailable");
-        return res.json();
-      })
-      .then((data) => setStatus(data.online ? { state: "online", players: data.players?.online ?? 0 } : { state: "offline" }))
-      .catch(() => setStatus({ state: "unavailable" }))
-      .finally(() => window.clearTimeout(timeout));
-    return () => { window.clearTimeout(timeout); controller.abort(); };
-  }, []);
 
   useEffect(() => {
     if (!copied) return;
@@ -64,10 +49,6 @@ export default function Home() {
       setCopyError("Couldn’t copy automatically. Select and copy the server address above.");
     }
   }
-
-  const statusText = status.state === "online" ? `${status.players} ${status.players === 1 ? "player" : "players"} online` : {
-    checking: "Checking server status…", offline: "Server currently offline", unavailable: "Server status unavailable",
-  }[status.state];
 
   return (
     <Box bg="#090909" color="#f5f5f5" fontFamily="Arial, Helvetica, sans-serif" minH="100vh" css={pageStyles}>
@@ -92,7 +73,7 @@ export default function Home() {
         <Box as="section" {...pageWidth} pt={{ base: "35px", md: "56px" }} id="join" aria-labelledby="join-heading" scrollMarginTop="24px">
           <Flex direction={{ base: "column", lg: "row" }} justify="space-between" align={{ base: "flex-start", lg: "flex-end" }} gap="24px" mb="27px">
             <Box><Text {...sectionLabel}>SEE YOU ON THE SERVER</Text><Heading as="h2" id="join-heading" {...sectionHeading}>Your adventure is one connection away.</Heading></Box>
-            <Flex role="status" fontSize="11px" color={muted} align="center" gap="8px" whiteSpace="nowrap" pb="4px"><Box w="6px" h="6px" rounded="full" bg={status.state === "online" ? gold : muted} boxShadow={status.state === "online" ? "0 0 0 4px #ffcc0012" : undefined} />{statusText}</Flex>
+            <ServerActivity />
           </Flex>
           <Grid templateColumns={{ base: "1fr", lg: "repeat(2, minmax(0, 1fr))" }} gap="18px">
             {[{ name: "Java Edition", description: "For Java players on PC, Mac & Linux", address: JAVA_ADDRESS, number: "01" }, { name: "Bedrock Edition", description: "For Bedrock players on PC & mobile", address: BEDROCK_ADDRESS, number: "02" }].map((server) => (
