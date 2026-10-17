@@ -19,6 +19,8 @@ Keep the password on the Go server. Do not use a `NEXT_PUBLIC_` variable. The Pl
 
 Plan uses form login at `POST /auth/login` with `user` and `password`, followed by the returned `auth` cookie. The backend keeps that cookie in memory, renews it once on authentication failure, caches counts for 15 seconds, and backs off for 30 seconds after a failure. The browser refreshes every 30 seconds. Missing credentials or invalid/unavailable upstream data return a generic HTTP 503 without publishing Plan's response.
 
+Plan's `/v1/datapoint` returns an object such as `{"type":"PLAYERS_ONLINE","value":7,"formatType":"NONE","timestamp":1792195200000}`. The backend validates the metric type and reads the nonnegative integer from `value`; it does not expect a bare JSON number or forward Plan's metadata.
+
 A count of zero means no players online; it does not establish that the Minecraft server is offline. This display reports player activity, not a separate Minecraft reachability probe. `/v1/playersTable` contains historical players and must not be used as an online player count.
 
 Status failures are logged to the Go backend console (stderr) as `[ERROR] GET /status` with the failed operation and reason, including upstream HTTP codes, missing `PLAN_API_PASSWORD`, timeouts, and invalid response formats. Each failed refresh logs once; requests served during the 30-second failure backoff do not repeat the log. Credentials, cookies, upstream bodies, and configured URLs are omitted. The public JSON remains generic. The Next.js server console also logs backend HTTP failures, invalid payloads, and connection failures for `/api/server/status`; a backend HTTP 503 should be investigated in the Go console for the Plan-specific cause.

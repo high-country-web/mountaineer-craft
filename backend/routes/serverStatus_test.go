@@ -82,7 +82,7 @@ func TestPlanStatusCookieLoginCacheAndExpiry(t *testing.T) {
 			http.Redirect(w, r, "/login", 302)
 			return
 		}
-		fmt.Fprint(w, "7")
+		fmt.Fprint(w, `{"type":"PLAYERS_ONLINE","value":7,"formatType":"NONE","timestamp":1792195200000}`)
 	}))
 	defer upstream.Close()
 	p := newPlanStatusClient(upstream.URL, "apiuser", "secret&value", "survival")
@@ -103,7 +103,18 @@ func TestPlanStatusCookieLoginCacheAndExpiry(t *testing.T) {
 }
 
 func TestPlanStatusRejectsInvalidResponsesAndBacksOff(t *testing.T) {
-	for _, body := range []string{"null", "-1", "{}", "1.5", "<html>login</html>", "1 2"} {
+	for _, body := range []string{
+		"null", "-1", "{}", "1.5", "7", "<html>login</html>", "1 2",
+		`{"type":"PLAYERS_ONLINE"}`,
+		`{"type":"PLAYERS_ONLINE","value":null}`,
+		`{"type":"PLAYERS_ONLINE","value":-1}`,
+		`{"type":"PLAYERS_ONLINE","value":1.5}`,
+		`{"type":"PLAYERS_ONLINE","value":"7"}`,
+		`{"type":"PLAYERS_ONLINE","value":9223372036854775808}`,
+		`{"type":"PLAYERS_ONLINE_AVERAGE","value":7}`,
+		`{"value":7}`,
+		`{"type":"PLAYERS_ONLINE","value":7} {}`,
+	} {
 		t.Run(body, func(t *testing.T) {
 			reads := 0
 			upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { reads++; fmt.Fprint(w, body) }))
@@ -123,7 +134,10 @@ func TestPlanStatusRejectsInvalidResponsesAndBacksOff(t *testing.T) {
 
 func TestPlanStatusZeroIsValidAndMissingPasswordMakesNoRequests(t *testing.T) {
 	reads := 0
-	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { reads++; fmt.Fprint(w, "0") }))
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		reads++
+		fmt.Fprint(w, `{"type":"PLAYERS_ONLINE","value":0,"formatType":"NONE","timestamp":1792195200000}`)
+	}))
 	defer upstream.Close()
 	p := newPlanStatusClient(upstream.URL, "apiuser", "", "")
 	if _, err := p.status(context.Background()); err == nil || reads != 0 {

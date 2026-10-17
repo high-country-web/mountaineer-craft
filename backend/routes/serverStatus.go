@@ -105,16 +105,20 @@ func (p *planStatusClient) count(ctx context.Context) (int, bool, error) {
 	if resp.StatusCode != http.StatusOK {
 		return 0, false, fmt.Errorf("analytics player count failed: upstream HTTP %d", resp.StatusCode)
 	}
-	var count *int
+	// Plan wraps each metric in a DatapointValue, rather than returning a scalar.
+	var datapoint struct {
+		Type  string `json:"type"`
+		Value *int   `json:"value"`
+	}
 	decoder := json.NewDecoder(io.LimitReader(resp.Body, 4096))
-	if decoder.Decode(&count) != nil || count == nil || *count < 0 {
-		return 0, false, errors.New("invalid analytics player count: expected a nonnegative JSON integer")
+	if decoder.Decode(&datapoint) != nil || datapoint.Type != "PLAYERS_ONLINE" || datapoint.Value == nil || *datapoint.Value < 0 {
+		return 0, false, errors.New("invalid analytics player count: expected PLAYERS_ONLINE datapoint with a nonnegative integer value")
 	}
 	var extra any
 	if decoder.Decode(&extra) != io.EOF {
-		return 0, false, errors.New("invalid analytics player count: trailing data after JSON integer")
+		return 0, false, errors.New("invalid analytics player count: trailing data after JSON datapoint")
 	}
-	return *count, false, nil
+	return *datapoint.Value, false, nil
 }
 
 func (p *planStatusClient) status(ctx context.Context) (serverStatus, error) {
