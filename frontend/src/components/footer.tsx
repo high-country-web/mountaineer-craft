@@ -6,7 +6,7 @@ export default function Footer() {
     <Box as="footer" bg="#090909" color="#999999" fontFamily="Arial, Helvetica, sans-serif">
       <Flex
         maxW="1184px"
-        mx={{ base: "20px", md: "28px", lg: "auto" }}
+        mx={{ base: "16px", sm: "20px", md: "28px", lg: "auto" }}
         borderTop="1px solid #ffffff16"
         py="25px"
         direction={{ base: "column", md: "row" }}

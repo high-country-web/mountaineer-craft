@@ -29,13 +29,13 @@ export default function ServerActivity() {
   }, []);
 
   return (
-    <Flex role="status" aria-live="polite" align="center" gap="12px" bg="#151515" border="1px solid #ffffff16" borderRadius="8px" px="20px" py="15px" flexShrink={0}>
-      <Box aria-hidden="true" w="8px" h="8px" rounded="full" bg={status ? "#ffcc00" : "#888888"} />
-      <Box>
-        <Text fontSize="16px" fontWeight="600" color="#f5f5f5">
+    <Flex role="status" aria-live="polite" align="center" gap={{ base: "10px", sm: "12px" }} bg="#151515" border="1px solid #ffffff16" borderRadius="8px" px={{ base: "15px", sm: "20px" }} py={{ base: "13px", sm: "15px" }} flexShrink={0} w={{ base: "full", sm: "auto" }} minW={0}>
+      <Box aria-hidden="true" w="8px" h="8px" flexShrink={0} rounded="full" bg={status ? "#ffcc00" : "#888888"} />
+      <Box minW={0}>
+        <Text fontSize={{ base: "14px", sm: "16px" }} fontWeight="600" color="#f5f5f5" overflowWrap="anywhere">
           {loading ? "Checking server activity…" : status ? status.players_online === 0 ? "No players online" : `${status.players_online} ${status.players_online === 1 ? "player" : "players"} online` : "Server status unavailable"}
         </Text>
-        <Text fontSize="13px" color="#aaaaaa" mt="3px">
+        <Text fontSize={{ base: "11px", sm: "13px" }} lineHeight="1.5" color="#aaaaaa" mt="3px">
           {status ? "Live activity · Refreshes every 30 seconds" : loading ? "Fetching the latest player count" : "We’ll check again shortly"}
         </Text>
       </Box>

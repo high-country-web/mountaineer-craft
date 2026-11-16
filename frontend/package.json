@@ -1,6 +1,6 @@
 {
   "name": "mountaineer-craft",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "engines": { "node": ">=22" },
   "scripts": {
     "wiki:generate": "node scripts/build-wiki.mjs",
@@ -13,8 +13,6 @@
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "start": "next start",
-    "test:auth": "node --test tests/auth.integration.test.mjs",
-    "test:status-worker": "node --test tests/status.worker.test.mjs",
     "lint": "eslint"
   },
   "dependencies": {

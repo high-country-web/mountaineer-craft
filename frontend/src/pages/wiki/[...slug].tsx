@@ -8,15 +8,15 @@ import { getWikiArticle, getWikiArticles } from "@/lib/wiki";
 import type { WikiArticle } from "@/lib/wiki";
 
 const articleStyles: SystemStyleObject = {
-  fontSize: "17px", lineHeight: "1.85", color: "#d0d0d0", overflowWrap: "anywhere",
+  fontSize: { base: "15px", sm: "16px", md: "17px" }, lineHeight: "1.85", color: "#d0d0d0", overflowWrap: "anywhere",
   "& p, & ul, & ol, & pre, & blockquote": { mb: "1.1em" },
   "& h2, & h3, & h4, & h5, & h6": { color: "#f5f5f5", fontWeight: "600", lineHeight: "1.35", mt: "1.6em", mb: ".6em" },
-  "& h2": { fontSize: "28px" }, "& h3": { fontSize: "23px" },
+  "& h2": { fontSize: { base: "24px", md: "28px" } }, "& h3": { fontSize: { base: "20px", md: "23px" } },
   "& ul": { listStyleType: "disc", pl: "1.5em" }, "& ol": { listStyleType: "decimal", pl: "1.5em" },
   "& li + li": { mt: ".4em" },
   "& a": { color: "#ffcc00", textDecoration: "underline", textUnderlineOffset: "3px" },
   "& code": { bg: "#ffffff0b", color: "#ffcc00", px: ".35em", py: ".15em", borderRadius: "4px", fontSize: ".9em" },
-  "& pre": { bg: "#151515", border: "1px solid #ffffff16", p: "20px", borderRadius: "8px", overflowX: "auto" },
+  "& pre": { bg: "#151515", border: "1px solid #ffffff16", p: { base: "14px", sm: "20px" }, borderRadius: "8px", overflowX: "auto" },
   "& pre code": { bg: "transparent", p: 0 },
   "& blockquote": { borderLeft: "3px solid #ffcc00", pl: "20px", color: "#aaaaaa" },
   "& hr": { borderColor: "#ffffff20", my: "32px" },

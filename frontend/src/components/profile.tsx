@@ -17,9 +17,9 @@ const border = "#ffffff16";
 
 export function ProfileLayout({ children }: { children: ReactNode }) {
   return (
-    <Box as="main" bg="#090909" color="#f5f5f5" minH="calc(100dvh - 94px)" fontFamily="Arial, Helvetica, sans-serif" css={{ "& a:focus-visible, & button:focus-visible": { outline: `3px solid ${gold}`, outlineOffset: "4px" } }}>
+    <Box as="main" bg="#090909" color="#f5f5f5" minH={{ base: "calc(100dvh - 72px)", md: "calc(100dvh - 94px)" }} fontFamily="Arial, Helvetica, sans-serif" css={{ "& a:focus-visible, & button:focus-visible": { outline: `3px solid ${gold}`, outlineOffset: "4px" } }}>
       <Head><title>Your Profile — Mountaineer Craft</title><meta name="robots" content="noindex, nofollow" /></Head>
-      <Box maxW="1280px" mx="auto" px={{ base: "20px", md: "28px", lg: "48px" }} py={{ base: 8, md: 12 }}>
+      <Box maxW="1280px" mx="auto" px={{ base: "16px", sm: "20px", md: "28px", lg: "48px" }} py={{ base: 7, md: 12 }}>
         <Link asChild color="#aaaaaa" fontSize="14px" mb={8} _hover={{ color: gold }}><NextLink href="/"><LuArrowLeft />Back to the server</NextLink></Link>
         <Text color={gold} fontSize="12px" fontWeight="700" letterSpacing="2px" mb={3}>YOUR CORNER OF MOUNTAINEER CRAFT</Text>
         <Heading as="h1" fontSize={{ base: "36px", md: "46px" }} fontWeight="600" lineHeight="1.2" mb={3}>Your profile</Heading>

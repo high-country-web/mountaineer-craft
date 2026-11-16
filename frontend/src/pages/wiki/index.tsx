@@ -17,11 +17,11 @@ export default function WikiIndex({ articles }: InferGetServerSidePropsType<type
     <WikiLayout articles={articles}>
       <Head><title>Wiki — Mountaineer Craft</title><meta name="description" content="Guides, server rules, and useful commands for the Mountaineer Craft community." /></Head>
       <Text color="#ffcc00" fontSize="12px" letterSpacing="2px" fontWeight="700" mb={3}>THE SERVER HANDBOOK</Text>
-      <Heading as="h1" fontSize={{ base: "36px", md: "48px" }} fontWeight="600" mb={4}>Mountaineer Craft Wiki</Heading>
-      <Text color="#aaaaaa" fontSize="18px" lineHeight="1.8" maxW="650px" mb={9}>Find your first steps, useful commands, and guides to making the most of your time on the server.</Text>
+      <Heading as="h1" fontSize={{ base: "clamp(32px, 10vw, 36px)", md: "48px" }} lineHeight="1.15" fontWeight="600" mb={4}>Mountaineer Craft Wiki</Heading>
+      <Text color="#aaaaaa" fontSize={{ base: "16px", md: "18px" }} lineHeight="1.8" maxW="650px" mb={9}>Find your first steps, useful commands, and guides to making the most of your time on the server.</Text>
       <Grid templateColumns={{ base: "1fr", md: "repeat(2, minmax(0, 1fr))" }} gap={5}>
         {articles.map((article) => (
-          <Link asChild key={article.href} display="block" p={6} border="1px solid #ffffff16" borderRadius="8px" bg="#151515" color="inherit" textDecoration="none" _hover={{ borderColor: "#ffcc0070", bg: "#1b1b1b" }}>
+          <Link asChild key={article.href} display="block" p={{ base: 5, sm: 6 }} border="1px solid #ffffff16" borderRadius="8px" bg="#151515" color="inherit" textDecoration="none" _hover={{ borderColor: "#ffcc0070", bg: "#1b1b1b" }}>
             <NextLink href={article.href}>
               <Text fontSize="12px" color="#aaaaaa" mb={3}>{article.group}</Text>
               <Heading as="h2" fontSize="22px" mb={3}>{article.title}</Heading>
