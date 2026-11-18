@@ -1,0 +1,2 @@
+# Cloudflare runs npm ci in this directory, so its lockfile must be committed.
+!/package-lock.json
