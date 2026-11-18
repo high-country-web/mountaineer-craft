@@ -83,6 +83,19 @@ Membership uses Discord’s existing `guilds` OAuth scope and
 [Get Current User Guilds](https://discord.com/developers/docs/resources/user#get-current-user-guilds).
 No bot token or additional scope is required.
 
+## Players
+
+The public `/players` directory lists all players recorded by Plan, with Minecraft
+skins, name search, and links to `/players/[slug]`. The slug is the Minecraft UUID,
+so profile links survive name changes. Profiles show join and last-seen dates,
+active playtime, sessions, online status, deaths, and kill counts when available.
+Skins use [Crafthead](https://crafthead.net/) with an unavailable-image fallback.
+
+The Next.js server reads the Go API's `/players` and `/players/:slug` routes using
+`API_BASE_URL`. Deploy both projects for this feature. Plan credentials remain on
+the Go server; no new frontend secrets are needed. An unavailable backend renders
+a retry page with HTTP 503; unknown profiles return 404.
+
 ## Wiki
 
 The build bundles Markdown files from the repository's `wiki/` folder for the

@@ -10,6 +10,7 @@ export default function Navbar() {
   const { pathname } = useRouter();
   const { user } = useSession();
   const inWiki = pathname === "/wiki" || pathname.startsWith("/wiki/");
+  const inPlayers = pathname === "/players" || pathname.startsWith("/players/");
 
   return (
     <Box as="header" bg="#090909" color="#f5f5f5" fontFamily="Arial, Helvetica, sans-serif" borderBottom="1px solid #ffffff16" css={{ "& a": { textDecoration: "none" }, "& a:focus-visible": { outline: "3px solid #ffcc00", outlineOffset: "5px" } }}>
@@ -21,6 +22,7 @@ export default function Navbar() {
           </NextLink>
         </Link>
         <Flex as="nav" aria-label="Main navigation" align="center" gap={{ base: "9px", sm: "14px", md: "24px", lg: "32px" }} fontSize={{ base: "12px", md: "13px" }} fontWeight="600">
+          <Link asChild color={inPlayers ? "#ffcc00" : "#cccccc"} _hover={{ color: "#ffcc00" }}><NextLink href="/players" aria-current={inPlayers ? "page" : undefined}>Players</NextLink></Link>
           <Link asChild color={inWiki ? "#ffcc00" : "#cccccc"} _hover={{ color: "#ffcc00" }}><NextLink href="/wiki" aria-current={inWiki ? "page" : undefined}>Wiki</NextLink></Link>
           <Link href="https://links.mountaineercraft.net/map" target="_blank" rel="noopener noreferrer" display={{ base: "none", md: "inline-flex" }} color="#cccccc" _hover={{ color: "#ffcc00" }}>Live map <LuArrowRight /></Link>
           <Link href="https://links.mountaineercraft.net/discord" target="_blank" rel="noopener noreferrer" display={{ base: "none", md: "inline-flex" }} color="#cccccc" _hover={{ color: "#ffcc00" }}>Discord <FaDiscord /></Link>
