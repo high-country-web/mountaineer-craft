@@ -25,6 +25,24 @@ A count of zero means no players online; it does not establish that the Minecraf
 
 Status failures are logged to the Go backend console (stderr) as `[ERROR] GET /status` with the failed operation and reason, including upstream HTTP codes, missing `PLAN_API_PASSWORD`, timeouts, and invalid response formats. Each failed refresh logs once; requests served during the 30-second failure backoff do not repeat the log. Credentials, cookies, upstream bodies, and configured URLs are omitted. The public JSON remains generic. The Next.js server console also logs backend HTTP failures, invalid payloads, and connection failures for `/api/server/status`; a backend HTTP 503 should be investigated in the Go console for the Plan-specific cause.
 
+## Public player directory
+
+`GET /players` returns `{ "players": [...] }`; `GET /players/:slug` returns one
+profile, where the slug is a Minecraft UUID. Both routes are public. They reuse
+the `PLAN_API_*` settings above and optional `PLAN_SERVER_ID`. The Plan account
+also needs access to `/v1/playersTable` and `/v1/player` (player overview).
+The directory expects Plan's structured `players` array (`playerUUID`,
+`playerName`, `playtimeActive`, `sessionCount`, `registered`, `lastSeen`).
+See [Plan's player DTO](https://github.com/plan-player-analytics/Plan/blob/master/Plan/common/src/main/java/com/djrapitops/plan/delivery/domain/datatransfer/TablePlayerDto.java).
+
+Only names, UUIDs, activity dates, active playtime, session counts, online status,
+deaths, and kill counts are published. Connection data, location, extensions,
+account links, and Plan cookies are never forwarded. Directory refreshes and
+failure retries are limited to once every 30 seconds. Profile requests are limited
+to players in the configured directory. Unknown UUIDs return 404 and upstream
+failures return a generic 503. Missing metrics remain null rather than fabricated
+zeroes. An empty directory is a successful empty array.
+
 ## Discord account links
 
 Plan's DiscordSRV extension can report a linked-account boolean and Discord username for a Minecraft UUID through player extension data. Its default fields do not expose the immutable Discord user ID. Securely associating a signed-in website user with a Minecraft account needs an authoritative Discord ID to Minecraft UUID mapping from DiscordSRV or another trusted integration. Do not match mutable usernames or use analytics as proof of current Discord server membership. Player profiles and account links are not exposed by the public status route.

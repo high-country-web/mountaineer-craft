@@ -55,6 +55,7 @@ func getRoutes() {
 	main := router.Group("/")
 	mainRoute(main)
 	main.GET("/status", serverStatusRoute())
+	playersRoutes(main)
 
 	auth := router.Group("/auth")
 	auth.POST("/discord", authRoute)

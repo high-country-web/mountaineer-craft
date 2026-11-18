@@ -19,7 +19,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Only this aggregate is public. Plan cookies and player records stay on the API.
+// This route exposes only the aggregate. Player profiles have a separate allowlist.
 type serverStatus struct {
 	PlayersOnline int       `json:"players_online"`
 	UpdatedAt     time.Time `json:"updated_at"`
