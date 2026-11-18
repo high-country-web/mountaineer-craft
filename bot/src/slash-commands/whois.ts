@@ -21,7 +21,9 @@ const command: SlashCommand = {
     const player = member.nickname ?? member.user.username;
     await interaction.deferReply();
 
-    const res = await playerAnalyticsClient.request(`/v1/player?player=${player}`);
+    const res = await playerAnalyticsClient.request(
+      `/v1/player?player=${encodeURIComponent(player)}`,
+    );
     const playerData = await res.json();
 
     if (playerData.error) {
@@ -34,7 +36,6 @@ const command: SlashCommand = {
       return;
     }
 
-    console.log(playerData);
     let MCJoinedOn = "Unknown";
     if (playerData.info.registered) {
       MCJoinedOn = `<t:${Math.floor(playerData.info.registered / 1000)}:R>`;

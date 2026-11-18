@@ -53,7 +53,7 @@ const start = async () => {
 
   (async () => {
     try {
-      playerAnalyticsClient.login();
+      await playerAnalyticsClient.login();
     } catch (error) {
       Logger.error(`Error logging into Plan API: ${error}`);
     }
