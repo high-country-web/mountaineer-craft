@@ -6,13 +6,19 @@ const wikiRoot = fileURLToPath(new URL("../../wiki/", import.meta.url));
 const destination = fileURLToPath(new URL("../src/generated/wiki.json", import.meta.url));
 
 async function collect(directory, prefix = []) {
-  const entries = (await readdir(directory, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name));
+  const entries = (await readdir(directory, { withFileTypes: true })).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
   const articles = [];
   for (const entry of entries) {
     if (entry.name.startsWith(".")) continue;
     const filename = path.join(directory, entry.name);
-    if (entry.isDirectory()) articles.push(...await collect(filename, [...prefix, entry.name]));
-    else if (entry.isFile() && entry.name.endsWith(".md")) articles.push({ slug: [...prefix, entry.name.slice(0, -3)], source: await readFile(filename, "utf8") });
+    if (entry.isDirectory()) articles.push(...(await collect(filename, [...prefix, entry.name])));
+    else if (entry.isFile() && entry.name.endsWith(".md"))
+      articles.push({
+        slug: [...prefix, entry.name.slice(0, -3)],
+        source: await readFile(filename, "utf8"),
+      });
   }
   return articles;
 }

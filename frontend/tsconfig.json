@@ -16,7 +16,7 @@
 
     "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "moduleResolution": "Bundler"
   },
   "include": [
     "next-env.d.ts",

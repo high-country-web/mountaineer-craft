@@ -11,21 +11,51 @@ export type Player = {
   player_kills?: number | null;
 };
 
-export const isPlayerSlug = (slug: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
+export const isPlayerSlug = (slug: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
+
+export type PlayerSort = "recent" | "playtime" | "name";
+
+export function sortPlayers(players: Player[], sort: PlayerSort): Player[] {
+  return [...players].sort((left, right) => {
+    const difference =
+      sort === "recent"
+        ? (right.last_seen ?? -1) - (left.last_seen ?? -1)
+        : sort === "playtime"
+          ? (right.active_playtime ?? -1) - (left.active_playtime ?? -1)
+          : 0;
+    return (
+      difference ||
+      left.name.localeCompare(right.name, "en", { sensitivity: "base" }) ||
+      left.uuid.localeCompare(right.uuid)
+    );
+  });
+}
 
 export function isPlayer(value: unknown): value is Player {
   if (!value || typeof value !== "object") return false;
   const p = value as Player;
-  const metric = (n: unknown) => n === null || (typeof n === "number" && Number.isSafeInteger(n) && n >= 0);
-  return typeof p.uuid === "string" && isPlayerSlug(p.uuid) && typeof p.name === "string" && p.name.trim().length > 0 &&
+  const metric = (n: unknown) =>
+    n === null || (typeof n === "number" && Number.isSafeInteger(n) && n >= 0);
+  return (
+    typeof p.uuid === "string" &&
+    isPlayerSlug(p.uuid) &&
+    typeof p.name === "string" &&
+    p.name.trim().length > 0 &&
     [p.registered, p.last_seen, p.active_playtime, p.sessions].every(metric) &&
-    [p.deaths, p.mob_kills, p.player_kills].every(n => n === undefined || metric(n)) &&
-    (p.online === undefined || typeof p.online === "boolean");
+    [p.deaths, p.mob_kills, p.player_kills].every((n) => n === undefined || metric(n)) &&
+    (p.online === undefined || typeof p.online === "boolean")
+  );
 }
 
 export function playerDate(timestamp: number | null) {
   if (!timestamp || !Number.isFinite(new Date(timestamp).getTime())) return "Not available";
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(timestamp);
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(timestamp);
 }
 
 export function playtime(milliseconds: number | null) {

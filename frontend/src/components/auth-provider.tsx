@@ -31,14 +31,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const response = await fetch("/api/auth/session", { cache: "no-store", signal });
         if (!active || signal.aborted) return;
         if (response.status === 401 || response.status === 403) {
-          if (protectedPage) await router.replace(`${response.status === 401 ? "/login" : "/join-discord"}?next=${next}`);
+          if (protectedPage)
+            await router.replace(
+              `${response.status === 401 ? "/login" : "/join-discord"}?next=${next}`,
+            );
           else setSession({ user: null, checkedPath: router.asPath, loading: false });
           return;
         }
         if (!response.ok) throw new Error("Membership check unavailable");
         const user = await response.json();
         if (user.in_guild !== true) throw new Error("Invalid membership response");
-        if (active && !signal.aborted) setSession({ user, checkedPath: router.asPath, loading: false });
+        if (active && !signal.aborted)
+          setSession({ user, checkedPath: router.asPath, loading: false });
       } catch {
         if (active && !signal.aborted) {
           if (protectedPage) await router.replace(`/access-unavailable?next=${next}`);
@@ -47,11 +51,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
     void verify();
-    const onFocus = () => { void verify(); };
+    const onFocus = () => {
+      void verify();
+    };
     window.addEventListener("focus", onFocus);
     // Revalidate while a page remains open, as well as on navigation and focus.
-    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void verify(); }, 60000);
-    return () => { active = false; controller?.abort(); window.removeEventListener("focus", onFocus); window.clearInterval(interval); };
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") void verify();
+    }, 60000);
+    return () => {
+      active = false;
+      controller?.abort();
+      window.removeEventListener("focus", onFocus);
+      window.clearInterval(interval);
+    };
   }, [router, router.isReady, router.pathname, router.asPath]);
   return <SessionContext.Provider value={session}>{children}</SessionContext.Provider>;
 }
@@ -61,5 +74,21 @@ export function MemberGate({ children }: { children: ReactNode }) {
   const session = useSession();
   if (!requiresMembership(router.pathname)) return children;
   if (!session.loading && session.user && session.checkedPath === router.asPath) return children;
-  return <Flex as="main" role="status" aria-live="polite" minH="calc(100dvh - 94px)" align="center" justify="center" gap={4} bg="#090909" color="#cccccc" px={5}><Spinner color="#ffcc00" /><Text fontSize="16px">Checking your access…</Text></Flex>;
+  return (
+    <Flex
+      as="main"
+      role="status"
+      aria-live="polite"
+      minH="calc(100dvh - 94px)"
+      align="center"
+      justify="center"
+      gap={4}
+      bg="#090909"
+      color="#cccccc"
+      px={5}
+    >
+      <Spinner color="#ffcc00" />
+      <Text fontSize="16px">Checking your access…</Text>
+    </Flex>
+  );
 }

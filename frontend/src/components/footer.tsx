@@ -18,9 +18,22 @@ export default function Footer() {
         <Box>
           <Text>Mountaineer Craft · A place to build. A place to belong.</Text>
           <Text fontSize="12px">Not affiliated with Mojang or Microsoft.</Text>
+          <Link href="/faq" color="#cccccc" fontSize="12px" _hover={{ color: "#ffcc00" }}>
+            Frequently asked questions
+          </Link>
         </Box>
         <Text flexShrink={0}>
-          Provided by <Link href="https://highcountryweb.dev/" target="_blank" rel="noopener noreferrer" color="#ffcc00" fontWeight="600" aria-label="High Country Web (opens in a new tab)">High Country Web <LuExternalLink aria-hidden="true" /></Link>
+          Provided by{" "}
+          <Link
+            href="https://highcountryweb.dev/"
+            target="_blank"
+            rel="noopener noreferrer"
+            color="#ffcc00"
+            fontWeight="600"
+            aria-label="High Country Web (opens in a new tab)"
+          >
+            High Country Web <LuExternalLink aria-hidden="true" />
+          </Link>
         </Text>
       </Flex>
     </Box>

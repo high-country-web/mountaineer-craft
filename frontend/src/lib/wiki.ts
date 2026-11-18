@@ -30,7 +30,7 @@ async function loadArticles() {
       slug,
       href: "/wiki/" + slug.map(encodeURIComponent).join("/"),
       title,
-      description: typeof data.description === "string" ? data.description : (heading || ""),
+      description: typeof data.description === "string" ? data.description : heading || "",
       group: slug.length > 1 ? humanize(slug[0]) : "Essentials",
       empty: body.length === 0,
       body,
@@ -53,18 +53,20 @@ export async function getWikiArticle(slug: string[]) {
   if (!found) return null;
   const { body, ...article } = found;
   // Rewrite repository-relative Markdown links to their public wiki routes.
-  const processor = remark().use(() => (tree) => {
-    function visit(node: MarkdownNode) {
-      if (node.type === "link" && node.url && !/^(?:[a-z][a-z\d+.-]*:|\/\/|#)/i.test(node.url)) {
-        const match = node.url.match(/^([^?#]+)\.md([?#].*)?$/);
-        if (match) {
-          const target = path.posix.resolve("/wiki", ...slug.slice(0, -1), match[1]);
-          if (target.startsWith("/wiki/")) node.url = target + (match[2] || "");
+  const processor = remark()
+    .use(() => (tree) => {
+      function visit(node: MarkdownNode) {
+        if (node.type === "link" && node.url && !/^(?:[a-z][a-z\d+.-]*:|\/\/|#)/i.test(node.url)) {
+          const match = node.url.match(/^([^?#]+)\.md([?#].*)?$/);
+          if (match) {
+            const target = path.posix.resolve("/wiki", ...slug.slice(0, -1), match[1]);
+            if (target.startsWith("/wiki/")) node.url = target + (match[2] || "");
+          }
         }
+        node.children?.forEach(visit);
       }
-      node.children?.forEach(visit);
-    }
-    visit(tree);
-  }).use(html, { sanitize: true });
+      visit(tree);
+    })
+    .use(html, { sanitize: true });
   return { ...article, html: String(await processor.process(body)) };
 }

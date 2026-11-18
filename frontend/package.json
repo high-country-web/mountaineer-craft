@@ -1,8 +1,12 @@
 {
   "name": "mountaineer-craft",
   "version": "0.0.4",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
+    "format": "npm --prefix .. run format",
+    "format:check": "npm --prefix .. run format:check",
     "wiki:generate": "node scripts/build-wiki.mjs",
     "predev": "npm run wiki:generate",
     "dev": "next dev --webpack",

@@ -12,9 +12,7 @@ export default function Error() {
         px={6}
         textAlign="center"
       >
-        <Box>
-          {/* insert error message... */}
-        </Box>
+        <Box>{/* insert error message... */}</Box>
       </Flex>
     </>
   );
