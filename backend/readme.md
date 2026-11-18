@@ -43,6 +43,12 @@ to players in the configured directory. Unknown UUIDs return 404 and upstream
 failures return a generic 503. Missing metrics remain null rather than fabricated
 zeroes. An empty directory is a successful empty array.
 
+Profile death and kill counts accept both Plan's legacy snake_case fields
+(`death_count`, `mob_kill_count`, `player_kill_count`) and newer camelCase fields
+(`deathCount`, `mobKillCount`, `playerKillCount`) inside `info`. The Plan account
+needs player overview permission for these fields; missing or invalid values
+remain unavailable.
+
 ## Discord account links
 
 Plan's DiscordSRV extension can report a linked-account boolean and Discord username for a Minecraft UUID through player extension data. Its default fields do not expose the immutable Discord user ID. Securely associating a signed-in website user with a Minecraft account needs an authoritative Discord ID to Minecraft UUID mapping from DiscordSRV or another trusted integration. Do not match mutable usernames or use analytics as proof of current Discord server membership. Player profiles and account links are not exposed by the public status route.

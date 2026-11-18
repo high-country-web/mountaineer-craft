@@ -87,6 +87,14 @@ func validMetric(n *int64) *int64 {
 	return n
 }
 
+// Plan renamed these fields from snake_case to camelCase; support both formats.
+func playerMetric(current, legacy *int64) *int64 {
+	if n := validMetric(current); n != nil {
+		return n
+	}
+	return validMetric(legacy)
+}
+
 // Caller holds d.mu, including while refreshing, to avoid duplicate upstream work.
 func (d *playerDirectory) list(ctx context.Context) ([]publicPlayer, error) {
 	if time.Now().Before(d.until) {
@@ -136,7 +144,17 @@ func (d *playerDirectory) list(ctx context.Context) ([]publicPlayer, error) {
 		log.Printf("[ERROR] GET /players: %v", err)
 		return nil, err
 	}
-	sort.Slice(players, func(i, j int) bool { return strings.ToLower(players[i].Name) < strings.ToLower(players[j].Name) })
+	sort.Slice(players, func(i, j int) bool {
+		left, right := players[i], players[j]
+		if left.LastSeen == nil || right.LastSeen == nil {
+			if left.LastSeen != right.LastSeen {
+				return left.LastSeen != nil
+			}
+		} else if *left.LastSeen != *right.LastSeen {
+			return *left.LastSeen > *right.LastSeen
+		}
+		return strings.ToLower(left.Name) < strings.ToLower(right.Name)
+	})
 	d.players = players
 	return players, nil
 }
@@ -167,11 +185,14 @@ func (d *playerDirectory) handler(c *gin.Context) {
 		}
 		var payload struct {
 			Info *struct {
-				UUID        string `json:"uuid"`
-				Online      *bool  `json:"online"`
-				Deaths      *int64 `json:"deathCount"`
-				MobKills    *int64 `json:"mobKillCount"`
-				PlayerKills *int64 `json:"playerKillCount"`
+				UUID              string `json:"uuid"`
+				Online            *bool  `json:"online"`
+				Deaths            *int64 `json:"deathCount"`
+				MobKills          *int64 `json:"mobKillCount"`
+				PlayerKills       *int64 `json:"playerKillCount"`
+				LegacyDeaths      *int64 `json:"death_count"`
+				LegacyMobKills    *int64 `json:"mob_kill_count"`
+				LegacyPlayerKills *int64 `json:"player_kill_count"`
 			} `json:"info"`
 		}
 		if err := d.request(ctx, "/v1/player?player="+url.QueryEscape(player.UUID), &payload); err != nil || payload.Info == nil || !strings.EqualFold(payload.Info.UUID, player.UUID) {
@@ -179,7 +200,10 @@ func (d *playerDirectory) handler(c *gin.Context) {
 			c.JSON(503, gin.H{"error": "players_unavailable"})
 			return
 		}
-		player.Online, player.Deaths, player.MobKills, player.PlayerKills = payload.Info.Online, validMetric(payload.Info.Deaths), validMetric(payload.Info.MobKills), validMetric(payload.Info.PlayerKills)
+		player.Online = payload.Info.Online
+		player.Deaths = playerMetric(payload.Info.Deaths, payload.Info.LegacyDeaths)
+		player.MobKills = playerMetric(payload.Info.MobKills, payload.Info.LegacyMobKills)
+		player.PlayerKills = playerMetric(payload.Info.PlayerKills, payload.Info.LegacyPlayerKills)
 		c.JSON(200, player)
 		return
 	}
