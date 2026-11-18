@@ -51,4 +51,37 @@ remain unavailable.
 
 ## Discord account links
 
-Plan's DiscordSRV extension can report a linked-account boolean and Discord username for a Minecraft UUID through player extension data. Its default fields do not expose the immutable Discord user ID. Securely associating a signed-in website user with a Minecraft account needs an authoritative Discord ID to Minecraft UUID mapping from DiscordSRV or another trusted integration. Do not match mutable usernames or use analytics as proof of current Discord server membership. Player profiles and account links are not exposed by the public status route.
+The member-only `GET /me/minecraft` endpoint suggests a public player profile using
+the signed-in user's current Discord username and Plan's DiscordSRV extension data.
+The frontend proxies this through `/api/account/minecraft` using the existing
+HttpOnly session cookie. Membership is checked independently on every request.
+
+Configure these settings in the Go backend's `.env` (never frontend variables):
+
+```dotenv
+PLAN_DB_HOST=
+PLAN_DB_PORT=3306
+PLAN_DB_NAME=
+PLAN_DB_USER=
+PLAN_DB_PASSWORD=
+PLAN_DB_TLS=true
+```
+
+The database user needs only SELECT access to `plan_extension_user_values`,
+`plan_extension_providers`, and `plan_extension_plugins`. The backend queries only
+the `DiscordSRV` plugin's `username` provider using a parameterized query. It strips
+the display `@` prefix and compares the full username case-insensitively. Duplicate
+UUID matches return `ambiguous`; no match returns `no_match`. Only a player present
+in the configured public directory can be suggested. Missing database settings
+return `not_configured`, and outages return a generic 503 without blocking sign-in.
+The website displays the suggestion, skin, playtime, and a link to the public profile.
+
+TLS defaults to required with certificate verification. Set `PLAN_DB_TLS=false`
+only when you intentionally allow an unencrypted database connection. Restart
+the Go backend after changing environment settings.
+
+Plan stores cached, mutable usernames, not immutable Discord IDs. This match is
+explicitly a suggestion and never grants permissions, verifies ownership, or
+replaces the live Discord membership check. A verified account link still requires
+DiscordSRV's authoritative Discord ID-to-UUID mapping. Database credentials and
+Discord usernames from Plan are not published by the public players/status routes.

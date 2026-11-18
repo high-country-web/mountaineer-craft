@@ -1,0 +1,11 @@
+{
+  "name": "mountaineer-craft-tools",
+  "private": true,
+  "scripts": {
+    "format": "node scripts/format.mjs",
+    "format:check": "node scripts/format.mjs --check"
+  },
+  "devDependencies": {
+    "prettier": "3.10.1"
+  }
+}

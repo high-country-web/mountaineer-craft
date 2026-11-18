@@ -74,8 +74,10 @@ func RequireDiscordMember() gin.HandlerFunc {
 	}
 }
 
-func meRoute(me *gin.RouterGroup) {
+func meRoute(me *gin.RouterGroup, directory *playerDirectory) {
 	me.Use(RequireSession(), RequireDiscordMember())
+	accounts := newMinecraftAccounts()
+	me.GET("/minecraft", accounts.handler(directory))
 	me.GET("", func(c *gin.Context) {
 		session := c.MustGet("discord_session").(discordSession)
 		c.JSON(http.StatusOK, gin.H{"id": session.User.ID, "username": session.User.Username, "email": session.User.Email, "avatar": session.User.Avatar, "in_guild": true})

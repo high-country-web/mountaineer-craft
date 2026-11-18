@@ -44,7 +44,7 @@ function run(cmd, cwd = REPO_DIR) {
  * Stop Discord bot
  */
 function stopBot() {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     if (!botProcess) return resolve();
 
     console.log("[watcher] Stopping Discord bot...");
@@ -74,10 +74,10 @@ async function startBot() {
 
   botProcess = spawn("npm", ["run", "dev"], {
     cwd: BOT_DIR,
-    stdio: "inherit"
+    stdio: "inherit",
   });
 
-  botProcess.on("exit", code => {
+  botProcess.on("exit", (code) => {
     console.log(`[watcher] Bot exited with code ${code}`);
     botProcess = null;
 
@@ -121,13 +121,9 @@ async function checkForUpdates() {
     const diff = await run(`git diff --name-only ${oldCommit} ${newCommit}`);
     const files = diff.split("\n").filter(Boolean);
 
-    const watcherChanged = files.some(
-      file => path.basename(file) === WATCHER_FILE
-    );
+    const watcherChanged = files.some((file) => path.basename(file) === WATCHER_FILE);
 
-    const botChanged = files.some(
-      file => file.startsWith("bot/")
-    );
+    const botChanged = files.some((file) => file.startsWith("bot/"));
 
     const packageChanged = files.includes("bot/package.json");
 
@@ -148,7 +144,6 @@ async function checkForUpdates() {
     } else {
       console.log("[watcher] Non-bot changes detected.");
     }
-
   } catch (err) {
     console.error("[watcher] Update check failed:", err.message);
   }

@@ -30,7 +30,7 @@ function run(cmd, cwd = REPO_DIR) {
  * Stop Go server and wait for port to be released
  */
 function stopGoServer() {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     if (!goProcess) return resolve();
 
     console.log("[watcher-dev] Stopping Go server...");
@@ -54,7 +54,7 @@ async function startGoServer() {
   console.log("[watcher-dev] Starting Go server (go run .)...");
   goProcess = spawn("go", ["run", "."], {
     cwd: BACKEND_DIR,
-    stdio: "inherit"
+    stdio: "inherit",
   });
 }
 
@@ -82,19 +82,13 @@ async function checkForUpdates() {
       return;
     }
 
-    const diff = await run(
-      `git diff --name-only ${oldCommit} ${newCommit}`
-    );
+    const diff = await run(`git diff --name-only ${oldCommit} ${newCommit}`);
 
     const files = diff.split("\n").filter(Boolean);
 
-    const watcherChanged = files.some(
-      file => path.basename(file) === WATCHER_FILE
-    );
+    const watcherChanged = files.some((file) => path.basename(file) === WATCHER_FILE);
 
-    const backendChanged = files.some(
-      file => file.startsWith("backend/")
-    );
+    const backendChanged = files.some((file) => file.startsWith("backend/"));
 
     if (watcherChanged) {
       console.log("[watcher-dev] Watcher-Dev updated. Restarting container...");

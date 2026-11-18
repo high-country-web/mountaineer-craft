@@ -210,7 +210,7 @@ func (d *playerDirectory) handler(c *gin.Context) {
 	c.JSON(404, gin.H{"error": "player_not_found"})
 }
 
-func playersRoutes(group *gin.RouterGroup) {
+func playersRoutes(group *gin.RouterGroup) *playerDirectory {
 	baseURL := os.Getenv("PLAN_API_URL")
 	if baseURL == "" {
 		baseURL = "https://analytics.mountaineercraft.net"
@@ -222,4 +222,5 @@ func playersRoutes(group *gin.RouterGroup) {
 	d := &playerDirectory{plan: newPlanStatusClient(baseURL, username, os.Getenv("PLAN_API_PASSWORD"), os.Getenv("PLAN_SERVER_ID"))}
 	group.GET("/players", d.handler)
 	group.GET("/players/:slug", d.handler)
+	return d
 }

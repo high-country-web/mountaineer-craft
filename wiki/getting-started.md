@@ -8,6 +8,7 @@ description: First steps on MountaineerCraft
 Welcome to **MountaineerCraft**!
 
 ## First Join
+
 When you first join the server you will spawn at the hub.
 
 ## Useful Commands

@@ -18,28 +18,19 @@ function prefix(level: string): string {
 
 const logger = {
   info(text: string): void {
-    console.log(
-      chalk.gray(`[${time()} `) + chalk.blue("INFO") + chalk.gray(`]: `) + text,
-    );
+    console.log(chalk.gray(`[${time()} `) + chalk.blue("INFO") + chalk.gray(`]: `) + text);
   },
 
   warn(text: string, warn?: string): void {
     const msg = `${text} ${warn ?? ""}`.trim();
 
-    console.log(
-      chalk.gray(`[${time()} `) +
-        chalk.yellow("WARN") +
-        chalk.gray(`]: `) +
-        msg,
-    );
+    console.log(chalk.gray(`[${time()} `) + chalk.yellow("WARN") + chalk.gray(`]: `) + msg);
   },
 
   async error(text: string, err?: string): Promise<void> {
     const msg = `${text} ${err ?? ""}`.trim();
 
-    console.log(
-      chalk.gray(`[${time()} `) + chalk.red("ERROR") + chalk.gray(`]: `) + msg,
-    );
+    console.log(chalk.gray(`[${time()} `) + chalk.red("ERROR") + chalk.gray(`]: `) + msg);
 
     try {
       await webhook.send({

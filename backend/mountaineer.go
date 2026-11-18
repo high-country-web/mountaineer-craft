@@ -14,7 +14,6 @@ func init() {
 	}
 }
 
-
 func main() {
 	log.Println("Starting Mountaineer Craft API")
 	// start redis

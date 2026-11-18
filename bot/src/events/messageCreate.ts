@@ -40,10 +40,7 @@ const event: Event = {
 
     if (!message.content.startsWith(`<@${client.user?.id}>`)) return;
 
-    const args = message.content
-      .slice(`<@${client.user?.id}>`.length)
-      .trim()
-      .split(/\s+/);
+    const args = message.content.slice(`<@${client.user?.id}>`.length).trim().split(/\s+/);
     const commandName = args.shift()?.toLowerCase();
 
     if (!commandName) {

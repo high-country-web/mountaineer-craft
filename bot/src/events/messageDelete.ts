@@ -1,16 +1,13 @@
 import { Events, Message, EmbedBuilder } from "discord.js";
 
-const truncate = (str: string, max = 1000) =>
-  str.length > max ? str.slice(0, max) + "..." : str;
+const truncate = (str: string, max = 1000) => (str.length > max ? str.slice(0, max) + "..." : str);
 
 export default {
   name: Events.MessageDelete,
   async execute(message: Message) {
     if (!message.guild || message.author?.bot) return;
 
-    const content = message.content
-      ? truncate(message.content)
-      : "*No content*";
+    const content = message.content ? truncate(message.content) : "*No content*";
 
     const attachments = message.attachments.size
       ? message.attachments.map((a) => a.url).join("\n")

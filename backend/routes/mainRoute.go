@@ -12,7 +12,7 @@ func mainRoute(rg *gin.RouterGroup) {
 		c.JSON(http.StatusOK, gin.H{
 			"error":   false,
 			"message": "OK",
-			"alt": "Mountaineer Craft API is up and running! test",
+			"alt":     "Mountaineer Craft API is up and running! test",
 		})
 	})
 }

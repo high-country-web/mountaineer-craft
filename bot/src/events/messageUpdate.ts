@@ -1,7 +1,6 @@
 import { Events, Message, EmbedBuilder } from "discord.js";
 
-const truncate = (str: string, max = 1000) =>
-  str.length > max ? str.slice(0, max) + "..." : str;
+const truncate = (str: string, max = 1000) => (str.length > max ? str.slice(0, max) + "..." : str);
 
 export default {
   name: Events.MessageUpdate,
@@ -13,13 +12,9 @@ export default {
 
     if (oldMessage.content === newMessage.content) return;
 
-    const before = oldMessage.content
-      ? truncate(oldMessage.content)
-      : "*No content*";
+    const before = oldMessage.content ? truncate(oldMessage.content) : "*No content*";
 
-    const after = newMessage.content
-      ? truncate(newMessage.content)
-      : "*No content*";
+    const after = newMessage.content ? truncate(newMessage.content) : "*No content*";
 
     const embed = new EmbedBuilder()
       .setTitle("✏️ Message Edited")

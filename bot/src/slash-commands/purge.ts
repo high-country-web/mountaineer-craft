@@ -48,8 +48,7 @@ const command: SlashCommand = {
 
     if (!channel || !channel.isTextBased() || !("bulkDelete" in channel)) {
       await interaction.reply({
-        content:
-          "❌ This command can only be used in text channels that support bulk deletion.",
+        content: "❌ This command can only be used in text channels that support bulk deletion.",
         flags: MessageFlags.Ephemeral,
       });
       return;

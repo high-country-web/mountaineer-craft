@@ -1,0 +1,17 @@
+**/node_modules/
+**/.next/
+**/.open-next/
+**/.wrangler/
+**/dist/
+**/build/
+**/coverage/
+**/out/
+**/vendor/
+**/*.tsbuildinfo
+**/next-env.d.ts
+**/package-lock.json
+frontend/src/generated/
+**/.env*
+**/.dev.vars*
+**/*.pem
+**/*.key

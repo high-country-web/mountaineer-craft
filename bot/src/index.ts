@@ -18,13 +18,7 @@ const __dirname = dirname(__filename);
 
 const start = async () => {
   const client = new ExtendedClient({
-    intents: [
-      "Guilds",
-      "GuildMessages",
-      "DirectMessages",
-      "MessageContent",
-      "GuildMembers",
-    ],
+    intents: ["Guilds", "GuildMessages", "DirectMessages", "MessageContent", "GuildMembers"],
     allowedMentions: { parse: [] },
   });
 
@@ -48,10 +42,7 @@ const start = async () => {
     try {
       Logger.info("Registering slash commands...");
       await rest.put(
-        Routes.applicationGuildCommands(
-          config.DISCORD_CLIENT_ID,
-          config.DISCORD_GUILD_ID,
-        ),
+        Routes.applicationGuildCommands(config.DISCORD_CLIENT_ID, config.DISCORD_GUILD_ID),
         { body: commands },
       );
       Logger.info("Slash commands registered.");
@@ -76,9 +67,7 @@ const start = async () => {
     if (interaction.isButton()) {
       if (!interaction.guild) return;
 
-      const roleConfig = rolePanel.roles.find(
-        (r) => r.customId === interaction.customId,
-      );
+      const roleConfig = rolePanel.roles.find((r) => r.customId === interaction.customId);
       if (!roleConfig) return;
 
       // Fetch the member to ensure full GuildMember

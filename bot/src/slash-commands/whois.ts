@@ -21,24 +21,16 @@ const command: SlashCommand = {
     const player = member.nickname ?? member.user.username;
     await interaction.deferReply();
 
-    const res = await playerAnalyticsClient.request(
-      `/v1/player?player=${player}`,
-    );
+    const res = await playerAnalyticsClient.request(`/v1/player?player=${player}`);
     const playerData = await res.json();
 
     if (playerData.error) {
-      if (
-        playerData.error === "Given 'player' was not found in the database."
-      ) {
+      if (playerData.error === "Given 'player' was not found in the database.") {
         await interaction.editReply(`❌ Player not found.`);
         return;
       }
-      await interaction.editReply(
-        `❌ An error occurred while fetching player data.`,
-      );
-      logger.error(
-        `Error fetching player data for ${player}: ${playerData.error}`,
-      );
+      await interaction.editReply(`❌ An error occurred while fetching player data.`);
+      logger.error(`Error fetching player data for ${player}: ${playerData.error}`);
       return;
     }
 

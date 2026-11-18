@@ -1,10 +1,10 @@
 package utils
 
 import (
+	"context"
 	"github.com/redis/go-redis/v9"
 	"log"
 	"os"
-	"context"
 )
 
 var Rdb *redis.Client

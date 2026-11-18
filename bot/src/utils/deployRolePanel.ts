@@ -4,9 +4,7 @@ import { buildRolePanel } from "./buildRolePanel.js";
 import logger from "./logger.js";
 
 export async function deployRolePanel(client: any) {
-  const channel = (await client.channels.fetch(
-    rolePanel.channelId,
-  )) as TextChannel;
+  const channel = (await client.channels.fetch(rolePanel.channelId)) as TextChannel;
 
   const { embed, row } = buildRolePanel();
 
