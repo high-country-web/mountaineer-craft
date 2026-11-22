@@ -24,6 +24,7 @@ export default function login(req: NextApiRequest, res: NextApiResponse) {
     redirect_uri: DISCORD_REDIRECT_URI,
     response_type: "code",
     scope: "identify guilds email",
+    prompt: "none",
     state,
   });
   res.redirect(302, `https://discord.com/oauth2/authorize?${params}`);
