@@ -19,10 +19,11 @@ installed. Back, Offlinetp and LogCleaner need author/download-page confirmation
 Geyser and Floodgate use manual entries because their development-build identity
 cannot be inferred from a generic SNAPSHOT version.
 
-Run `/plugin-updates` with Discord **Manage Server** permission for a private
-embed listing outdated plugins with installed/latest versions and release links,
-plus a complete text report for other results. Longer update lists use multiple
-embeds. Missing installed versions, unknown version
+Run `/plugin-updates` with Discord **Manage Server** permission to post public
+embeds in the current channel. The entire report is shown in embeds, including
+installed/latest versions, release links, and results needing review. No text
+attachment is created. Longer reports use multiple embeds.
+Missing installed versions, unknown version
 formats, source failures, and manual entries are shown separately. The checker
 does not declare unfamiliar version strings outdated using loose coercion.
 GitHub prereleases/drafts and Modrinth beta/alpha releases are excluded. The

@@ -5,8 +5,6 @@ services:
     restart: unless-stopped
     expose:
       - "4002"
-    ports:
-      - "127.0.0.1:8080:4002"
     environment:
       PORT: "4002"
       GIN_MODE: release

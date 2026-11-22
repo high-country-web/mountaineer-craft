@@ -1,11 +1,6 @@
-import {
-  AttachmentBuilder,
-  MessageFlags,
-  PermissionFlagsBits,
-  SlashCommandBuilder,
-} from "discord.js";
+import { MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import type { SlashCommand } from "../types/command.js";
-import { pluginReportText, runPluginCheck } from "../utils/pluginUpdates.js";
+import { runPluginCheck } from "../utils/pluginUpdates.js";
 import { pluginUpdateEmbeds } from "../utils/pluginUpdateEmbeds.js";
 
 const command: SlashCommand = {
@@ -24,23 +19,17 @@ const command: SlashCommand = {
       });
       return;
     }
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    await interaction.deferReply();
     try {
       const report = await runPluginCheck();
-      const embeds = pluginUpdateEmbeds(report);
+      const embeds = pluginUpdateEmbeds(report, report.results);
       await interaction.editReply({
         embeds: [embeds[0]],
-        files: [
-          new AttachmentBuilder(Buffer.from(pluginReportText(report), "utf8"), {
-            name: "plugin-updates.txt",
-          }),
-        ],
         allowedMentions: { parse: [] },
       });
       for (const embed of embeds.slice(1)) {
         await interaction.followUp({
           embeds: [embed],
-          flags: MessageFlags.Ephemeral,
           allowedMentions: { parse: [] },
         });
       }

@@ -49,17 +49,23 @@ placeholders. Values are runtime settings, not Docker build arguments.
   manual checks only. `GITHUB_TOKEN` is optional for the bot's release checks and
   is separate from the GitHub Actions token.
 
-The Compose file publishes the backend on **127.0.0.1:8080** for the existing
-Caddy running directly on the same Docker host. Keep its upstream set to
-`reverse_proxy 127.0.0.1:8080`, and leave the backend's **Coolify domain empty** so
-Caddy handles HTTPS. Ensure host port 8080 is free before deploying. This mapping
-is loopback-only; it does not publish the API port on the public interface.
+Use the existing external Caddy setup, as with Parkway Overlooks:
 
-If using Coolify's integrated proxy instead, remove this host port mapping and
-configure a domain on **backend** targeting container port **4002**, such as
-`https://api.mountaineercraft.net:4002` in Coolify's domain field. Use one routing
-setup for the domain. The bot is a background worker; give it no domain or HTTP
-health check. Redis stays internal and has no published host port.
+1. Keep `reverse_proxy 127.0.0.1:8080` for `api.mountaineercraft.net` in the
+   external Caddy configuration. That port belongs to the shared Coolify HTTP
+   proxy, not to this backend container.
+2. In Coolify, add **http://api.mountaineercraft.net** to the **backend** service
+   with internal port **4002**. If the UI encodes the target port in the domain
+   field, enter `http://api.mountaineercraft.net:4002` instead.
+3. Set **Redirect HTTP to HTTPS** to **Disabled** in Coolify. External Caddy
+   terminates HTTPS; Coolify routes its HTTP upstream request by hostname.
+4. Redeploy. Do not add a backend host-port mapping for 8080: that port is already
+   allocated to the shared proxy. The Compose file only exposes internal port 4002.
+
+The public website/API URLs remain HTTPS. If choosing Coolify to terminate TLS
+directly instead, route traffic to its HTTPS listener and configure its HTTPS
+domain/certificate rather than forwarding through the external Caddy's HTTP
+upstream. The bot needs no domain or HTTP health check. Redis stays internal.
 
 The backend image includes `GET /health`, which checks Redis. Redis has its own
 health check, and backend startup waits for it. Named volumes preserve Redis
