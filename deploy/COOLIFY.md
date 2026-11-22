@@ -43,9 +43,13 @@ placeholders. Values are runtime settings, not Docker build arguments.
   must belong together; the two applications intentionally remain separate.
 - The Plan user must allow `/v1/player`, `/v1/playersTable`,
   `/v1/playersOnline`, and the players-online datapoint.
-- The three Panel settings enable account linking, resource stats, and startup
-  plugin-version detection. The Client API user needs access to the Minecraft
-  server and file-read-content permission. Use its short eight-character server ID.
+- The bot auto-selects the server when Plan has one server. If Plan has multiple
+  servers, set `PLAN_SERVER_ID` to the UUID shown in the desired server's
+  `/server/<uuid>/plugin-history` URL. The Plan account needs permission to view
+  the server list and plugin history.
+- The Pterodactyl settings are used by account linking and resource stats. Its
+  Client API user needs access to the Minecraft server and file-read-content
+  permission. Use the Panel's short eight-character server ID.
 - The Compose stack maps `PLAN_API_*` to the bot's `PLAYER_ANALYTICS_*` settings.
   The bot and API therefore use the same Plan account.
 - `PLUGIN_UPDATES_CHANNEL_ID` enables hourly plugin alerts. Leave it blank for

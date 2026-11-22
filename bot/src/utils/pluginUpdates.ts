@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import semver from "semver";
+import playerAnalyticsClient from "./playerAnalyticsClient.js";
 
 type Source =
   | { type: "github"; repo: string }
@@ -225,43 +226,100 @@ export async function latestPluginVersion(
   throw new Error("Manual update source");
 }
 
-// Only parse startup version announcements, never arbitrary chat or command output.
-export function installedVersionsFromLog(log: string): Map<string, string> {
+// Plan's plugin-history response shape has changed across releases. Walk the
+// response and accept the current metadata and historical entry field names.
+export function installedVersionsFromPlan(value: unknown): Map<string, string> {
   const versions = new Map<string, string>();
-  for (const raw of log.split(/\r?\n/)) {
-    const line = raw.replace(/\u001b\[[0-9;]*m/g, "");
-    const match = line.match(
-      /^(?:\[\d{2}:\d{2}:\d{2}\] \[(?:Server thread|ServerMain|main)\/INFO\]|\[\d{2}:\d{2}:\d{2} INFO\]): \[[^\]]+\] (?:Enabling|Loading(?: server plugin)?) ([A-Za-z0-9_+.-]+) v([^\r\n]+)$/,
-    );
-    if (match && match[2].length <= 200) versions.set(match[1].toLowerCase(), match[2].trim());
-  }
+  const seenAt = new Map<string, number>();
+  const visited = new Set<object>();
+  const nameFields = new Set(["name", "plugin", "pluginname", "pluginid"]);
+  const versionFields = new Set(["version", "pluginversion"]);
+  const timeFields = new Set(["modified", "timestamp", "time", "date", "changedat"]);
+  const normalize = (key: string) => key.toLowerCase().replace(/[^a-z]/g, "");
+
+  const visit = (node: unknown): void => {
+    if (!node || typeof node !== "object" || visited.has(node)) return;
+    visited.add(node);
+    if (Array.isArray(node)) {
+      for (const item of node) visit(item);
+      return;
+    }
+    const record = node as Record<string, unknown>;
+    let name: string | undefined;
+    let version: string | undefined;
+    let time = 0;
+    for (const [key, raw] of Object.entries(record)) {
+      const field = normalize(key);
+      if (typeof raw === "string" && nameFields.has(field)) name ??= raw.trim();
+      if (typeof raw === "string" && versionFields.has(field)) version ??= raw.trim();
+      if (timeFields.has(field)) {
+        const parsed =
+          typeof raw === "number" ? raw : typeof raw === "string" ? Date.parse(raw) : NaN;
+        if (Number.isFinite(parsed)) time = parsed;
+      }
+    }
+    if (name && version && name.length <= 200 && version.length <= 200) {
+      const key = name.toLowerCase();
+      if (!seenAt.has(key) || time > (seenAt.get(key) ?? 0)) {
+        versions.set(key, version);
+        seenAt.set(key, time);
+      }
+    }
+    for (const child of Object.values(record)) visit(child);
+  };
+  visit(value);
   return versions;
 }
 
-async function panelInstalledVersions(): Promise<Map<string, string> | null> {
-  const panel = process.env.PTERODACTYL_PANEL_URL?.trim(),
-    server = process.env.PTERODACTYL_MINECRAFT_SERVER_ID?.trim(),
-    key = process.env.PTERODACTYL_CLIENT_API_KEY?.trim();
-  if (!panel && !server && !key) return null;
-  if (!panel || !server || !key || !/^[0-9a-f]{8}$/i.test(server) || !safeURL(panel))
-    throw new Error("Incomplete bot Panel configuration");
-  const url = new URL(panel);
-  if (url.search || url.hash) throw new Error("Invalid bot Panel URL");
-  url.pathname = url.pathname.replace(/\/$/, "") + `/api/client/servers/${server}/files/contents`;
-  url.searchParams.set("file", "/logs/latest.log");
-  try {
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${key}`, Accept: "application/vnd.pterodactyl.v1+json" },
-      redirect: "manual",
-      signal: AbortSignal.timeout(10000),
-    });
-    const log = await readResponse(response, 4 << 20);
-    return installedVersionsFromLog(log);
-  } catch {
+async function resolvePlanServerId(): Promise<string> {
+  const configured = process.env.PLAN_SERVER_ID?.trim();
+  if (configured) return configured;
+
+  // A single-server Plan setup should work without making the server UUID a
+  // separate bot setting. Plan's network server list provides the UUID.
+  const response = await playerAnalyticsClient.request("/v1/network/servers");
+  const payload: unknown = await response.json();
+  const ids = new Set<string>();
+  const visited = new Set<object>();
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const visit = (value: unknown): void => {
+    if (!value || typeof value !== "object" || visited.has(value)) return;
+    visited.add(value);
+    if (Array.isArray(value)) {
+      for (const item of value) visit(item);
+      return;
+    }
+    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+      const field = key.toLowerCase().replace(/[^a-z]/g, "");
+      if (
+        ["uuid", "serveruuid", "id"].includes(field) &&
+        typeof child === "string" &&
+        uuid.test(child)
+      )
+        ids.add(child);
+      visit(child);
+    }
+  };
+  visit(payload);
+  if (ids.size !== 1)
     throw new Error(
-      "Could not read startup versions from Panel; check file-read access and log size",
+      ids.size
+        ? "Plan returned multiple servers; set PLAN_SERVER_ID to select one"
+        : "Could not find the Plan server UUID; check the Plan account's server-list permission",
     );
-  }
+  return [...ids][0];
+}
+
+async function planInstalledVersions(): Promise<Map<string, string>> {
+  const server = await resolvePlanServerId();
+  const query = new URLSearchParams({ server });
+  const response = await playerAnalyticsClient.request(`/v1/pluginHistory?${query}`);
+  const versions = installedVersionsFromPlan(await response.json());
+  if (!versions.size)
+    throw new Error(
+      "Plan returned no plugin versions; check that the server UUID is correct and the Plan account can view plugin history",
+    );
+  return versions;
 }
 
 export async function checkPlugins(
@@ -348,12 +406,8 @@ export function runPluginCheck(): Promise<PluginReport> {
     const notes: string[] = [];
     let installed = new Map<string, string>();
     try {
-      const detected = await panelInstalledVersions();
-      if (detected) installed = detected;
-      else
-        notes.push(
-          "Set installedVersion in the tracking file or configure the bot's Panel variables to read startup versions.",
-        );
+      installed = await planInstalledVersions();
+      notes.push(`Plan returned installed versions for ${installed.size} plugins.`);
     } catch (error) {
       notes.push(error instanceof Error ? error.message : "Installed versions unavailable");
     }
