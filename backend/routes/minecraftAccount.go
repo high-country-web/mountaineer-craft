@@ -1,151 +1,194 @@
 package routes
 
 import (
+	"bufio"
 	"context"
-	"database/sql"
 	"errors"
+	"io"
 	"log"
-	"net"
 	"net/http"
+	"net/url"
 	"os"
-	"strconv"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-sql-driver/mysql"
 )
 
 type minecraftAccounts struct {
-	db  *sql.DB
-	err error
+	path     string
+	endpoint string
+	apiKey   string
+	client   *http.Client
+	err      error
 }
 
 func newMinecraftAccounts() *minecraftAccounts {
-	accounts := &minecraftAccounts{}
-	host := strings.TrimSpace(os.Getenv("PLAN_DB_HOST"))
-	if host == "" {
-		return accounts
+	accounts := &minecraftAccounts{path: strings.TrimSpace(os.Getenv("DISCORDSRV_ACCOUNTS_FILE"))}
+	panelURL := strings.TrimSpace(os.Getenv("PTERODACTYL_PANEL_URL"))
+	serverID := strings.TrimSpace(os.Getenv("PTERODACTYL_MINECRAFT_SERVER_ID"))
+	accounts.apiKey = strings.TrimSpace(os.Getenv("PTERODACTYL_CLIENT_API_KEY"))
+	// Any Panel setting selects API mode. Partial configuration must fail closed,
+	// rather than silently falling back to a potentially stale local file.
+	if panelURL != "" || serverID != "" || accounts.apiKey != "" {
+		accounts.endpoint, accounts.err = minecraftAccountsEndpoint(panelURL, serverID, accounts.apiKey)
+		accounts.client = &http.Client{
+			Timeout:       5 * time.Second,
+			CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse },
+		}
 	}
-	port := os.Getenv("PLAN_DB_PORT")
-	if port == "" {
-		port = "3306"
-	}
-	portNumber, err := strconv.Atoi(port)
-	tlsMode := os.Getenv("PLAN_DB_TLS")
-	if tlsMode == "" {
-		tlsMode = "true"
-	}
-	if err != nil || portNumber < 1 || portNumber > 65535 ||
-		os.Getenv("PLAN_DB_NAME") == "" || os.Getenv("PLAN_DB_USER") == "" ||
-		(tlsMode != "true" && tlsMode != "false") {
-		accounts.err = errors.New("invalid Plan database configuration")
-		log.Print("[ERROR] Minecraft account lookup: invalid database configuration")
-		return accounts
-	}
-	config := mysql.NewConfig()
-	config.User = os.Getenv("PLAN_DB_USER")
-	config.Passwd = os.Getenv("PLAN_DB_PASSWORD")
-	config.Net = "tcp"
-	config.Addr = net.JoinHostPort(host, port)
-	config.DBName = os.Getenv("PLAN_DB_NAME")
-	config.TLSConfig = tlsMode
-	config.Timeout = 3 * time.Second
-	config.ReadTimeout = 3 * time.Second
-	config.WriteTimeout = 3 * time.Second
-	accounts.db, accounts.err = sql.Open("mysql", config.FormatDSN())
-	if accounts.err != nil {
-		log.Print("[ERROR] Minecraft account lookup: could not initialize database")
-		return accounts
-	}
-	accounts.db.SetMaxOpenConns(3)
-	accounts.db.SetMaxIdleConns(2)
-	accounts.db.SetConnMaxLifetime(3 * time.Minute)
 	return accounts
 }
 
-// Plan's cached Discord username is a profile suggestion, never proof of account
-// ownership. It does not affect authentication, membership, or permissions.
-const minecraftProfileQuery = `SELECT DISTINCT values_table.uuid
-	FROM plan_extension_user_values AS values_table
-	JOIN plan_extension_providers AS provider ON provider.id = values_table.provider_id
-	JOIN plan_extension_plugins AS plugin ON plugin.id = provider.plugin_id
-	WHERE plugin.name = 'DiscordSRV' AND provider.name = 'username'
-	AND LOWER(TRIM(LEADING '@' FROM TRIM(values_table.string_value))) = LOWER(?)
-	LIMIT 2`
+var discordAccountID = regexp.MustCompile(`^[0-9]{17,20}$`)
+var panelServerID = regexp.MustCompile(`^[0-9a-fA-F]{8}$`)
+
+func minecraftAccountsEndpoint(panelURL, serverID, apiKey string) (string, error) {
+	endpoint, err := pterodactylServerEndpoint(panelURL, serverID, apiKey)
+	if err != nil {
+		return "", err
+	}
+	query := url.Values{"file": {"/plugins/DiscordSRV/accounts.aof"}}.Encode()
+	return endpoint + "/files/contents?" + query, nil
+}
+
+func pterodactylServerEndpoint(panelURL, serverID, apiKey string) (string, error) {
+	base, err := url.Parse(panelURL)
+	if err != nil || base.Scheme != "https" || base.Host == "" || base.User != nil ||
+		base.RawQuery != "" || base.Fragment != "" || !panelServerID.MatchString(serverID) ||
+		apiKey == "" || strings.ContainsAny(apiKey, "\r\n") {
+		return "", errors.New("invalid Pterodactyl account lookup configuration")
+	}
+	base.Path = strings.TrimRight(base.Path, "/") + "/api/client/servers/" + serverID
+	base.RawPath = ""
+	return base.String(), nil
+}
+
+// Replay DiscordSRV's append-only links and removals in file order.
+// DiscordSRV owns verification and is the only writer of this file.
+func readMinecraftLinks(reader io.Reader) (map[string]string, error) {
+	links := make(map[string]string)
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+		remove := strings.HasPrefix(line, "-")
+		fields := strings.Fields(strings.TrimPrefix(line, "-"))
+		if remove {
+			if len(fields) < 1 || len(fields) > 2 {
+				return nil, errors.New("invalid account removal")
+			}
+			for _, field := range fields {
+				if discordAccountID.MatchString(field) {
+					delete(links, field)
+				} else if playerUUID.MatchString(field) {
+					for id, uuid := range links {
+						if uuid == strings.ToLower(field) {
+							delete(links, id)
+						}
+					}
+				} else {
+					return nil, errors.New("invalid account removal")
+				}
+			}
+		} else {
+			if len(fields) != 2 || !discordAccountID.MatchString(fields[0]) || !playerUUID.MatchString(fields[1]) {
+				return nil, errors.New("invalid account link")
+			}
+			links[fields[0]] = strings.ToLower(fields[1])
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	owners := make(map[string]string)
+	for id, uuid := range links {
+		if _, exists := owners[uuid]; exists {
+			return nil, errors.New("conflicting account links")
+		}
+		owners[uuid] = id
+	}
+	return links, nil
+}
+
+func (accounts *minecraftAccounts) lookup(ctx context.Context, discordID string) (string, error) {
+	if accounts.err != nil {
+		return "", accounts.err
+	}
+	var reader io.ReadCloser
+	if accounts.endpoint != "" {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, accounts.endpoint, nil)
+		if err != nil {
+			return "", errors.New("invalid account request")
+		}
+		req.Header.Set("Authorization", "Bearer "+accounts.apiKey)
+		req.Header.Set("Accept", "application/vnd.pterodactyl.v1+json")
+		response, err := accounts.client.Do(req)
+		if err != nil {
+			return "", errors.New("panel account lookup unavailable")
+		}
+		if response.StatusCode != http.StatusOK {
+			response.Body.Close()
+			return "", errors.New("panel account lookup failed")
+		}
+		reader = response.Body
+	} else {
+		file, err := os.Open(accounts.path)
+		if err != nil {
+			return "", err
+		}
+		reader = file
+	}
+	defer reader.Close()
+	// Fail closed on oversized or incomplete snapshots; never serve stale links.
+	const maxSize = 16 << 20
+	data, err := io.ReadAll(io.LimitReader(reader, maxSize+1))
+	if err != nil || len(data) > maxSize || (len(data) > 0 && data[len(data)-1] != '\n') {
+		return "", errors.New("account file unavailable or incomplete")
+	}
+	links, err := readMinecraftLinks(strings.NewReader(string(data)))
+	if err != nil {
+		return "", err
+	}
+	return links[discordID], nil
+}
 
 func (accounts *minecraftAccounts) handler(directory *playerDirectory) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Header("Cache-Control", "private, no-store")
-		if accounts.err != nil {
-			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "minecraft_account_unavailable"})
-			return
-		}
-		if accounts.db == nil {
+		if accounts.path == "" && accounts.endpoint == "" && accounts.err == nil {
 			c.JSON(http.StatusOK, gin.H{"status": "not_configured"})
 			return
 		}
 		session := c.MustGet("discord_session").(discordSession)
+		uuid, err := accounts.lookup(c.Request.Context(), session.User.ID)
+		if err != nil {
+			log.Print("[ERROR] Minecraft account lookup: could not read DiscordSRV account links")
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "minecraft_account_unavailable"})
+			return
+		}
+		if uuid == "" {
+			c.JSON(http.StatusOK, gin.H{"status": "not_linked"})
+			return
+		}
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 8*time.Second)
 		defer cancel()
-		var currentUser discordUser
-		if err := discordGet(ctx, session.AccessToken, "/users/@me", &currentUser); err != nil || currentUser.ID != session.User.ID || currentUser.Username == "" {
-			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "minecraft_account_unavailable"})
-			return
-		}
-		var uuid string
-		rows, err := accounts.db.QueryContext(ctx, minecraftProfileQuery, currentUser.Username)
-		if err != nil {
-			log.Print("[ERROR] Minecraft profile suggestion: database query failed")
-			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "minecraft_account_unavailable"})
-			return
-		}
-		count := 0
-		for rows.Next() {
-			if err = rows.Scan(&uuid); err != nil || !playerUUID.MatchString(uuid) {
-				err = errors.New("invalid player UUID")
-				break
-			}
-			count++
-		}
-		if err == nil {
-			err = rows.Err()
-		}
-		rows.Close()
-		if err != nil {
-			log.Print("[ERROR] Minecraft profile suggestion: invalid database result")
-			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "minecraft_account_unavailable"})
-			return
-		}
-		if count != 1 {
-			status := "no_match"
-			if count > 1 {
-				status = "ambiguous"
-			}
-			c.JSON(http.StatusOK, gin.H{"status": status})
-			return
-		}
-		uuid = strings.ToLower(uuid)
 		var linkedPlayer *publicPlayer
 		directory.mu.Lock()
 		players, listErr := directory.list(ctx)
 		if listErr == nil {
 			for _, player := range players {
-				if player.UUID == uuid {
+				if strings.EqualFold(player.UUID, uuid) {
 					linkedPlayer = &player
 					break
 				}
 			}
 		}
 		directory.mu.Unlock()
-		if linkedPlayer == nil {
-			if listErr != nil {
-				c.JSON(http.StatusServiceUnavailable, gin.H{"error": "minecraft_account_unavailable"})
-			} else {
-				c.JSON(http.StatusOK, gin.H{"status": "no_match"})
-			}
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"status": "matched", "uuid": uuid, "player": linkedPlayer})
+		// Plan availability does not change the verified DiscordSRV link.
+		c.JSON(http.StatusOK, gin.H{"status": "linked", "uuid": uuid, "player": linkedPlayer})
 	}
 }

@@ -54,7 +54,9 @@ func Run() {
 func getRoutes() {
 	main := router.Group("/")
 	mainRoute(main)
+	main.GET("/health", healthRoute)
 	main.GET("/status", serverStatusRoute())
+	main.GET("/stats", serverStatsRoute())
 	directory := playersRoutes(main)
 
 	auth := router.Group("/auth")

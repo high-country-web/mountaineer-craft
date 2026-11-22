@@ -1,0 +1,70 @@
+services:
+  backend:
+    image: ${BACKEND_IMAGE:-ghcr.io/high-country-web/mountaineer-craft-backend:latest}
+    pull_policy: always
+    restart: unless-stopped
+    expose:
+      - "4002"
+    environment:
+      PORT: "4002"
+      GIN_MODE: release
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:?Set DISCORD_CLIENT_ID}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:?Set DISCORD_CLIENT_SECRET}
+      DISCORD_REDIRECT_URI: ${DISCORD_REDIRECT_URI:-https://mountaineercraft.net/oauth/discord}
+      DISCORD_REQUIRED_GUILD_ID: ${DISCORD_GUILD_ID:?Set DISCORD_GUILD_ID}
+      PLAN_API_URL: ${PLAN_API_URL:?Set PLAN_API_URL}
+      PLAN_API_USERNAME: ${PLAN_API_USERNAME:?Set PLAN_API_USERNAME}
+      PLAN_API_PASSWORD: ${PLAN_API_PASSWORD:?Set PLAN_API_PASSWORD}
+      PLAN_SERVER_ID: ${PLAN_SERVER_ID:-}
+      PTERODACTYL_PANEL_URL: ${PTERODACTYL_PANEL_URL:-}
+      PTERODACTYL_MINECRAFT_SERVER_ID: ${PTERODACTYL_MINECRAFT_SERVER_ID:-}
+      PTERODACTYL_CLIENT_API_KEY: ${PTERODACTYL_CLIENT_API_KEY:-}
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  bot:
+    image: ${BOT_IMAGE:-ghcr.io/high-country-web/mountaineer-craft-bot:latest}
+    pull_policy: always
+    restart: unless-stopped
+    init: true
+    environment:
+      DISCORD_TOKEN: ${DISCORD_TOKEN:?Set DISCORD_TOKEN}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:?Set DISCORD_CLIENT_ID}
+      DISCORD_GUILD_ID: ${DISCORD_GUILD_ID:?Set DISCORD_GUILD_ID}
+      DISCORD_LOG_WEBHOOK_URL: ${DISCORD_LOG_WEBHOOK_URL:?Set DISCORD_LOG_WEBHOOK_URL}
+      PLAYER_ANALYTICS_URL: ${PLAN_API_URL:?Set PLAN_API_URL}
+      PLAYER_ANALYTICS_USERNAME: ${PLAN_API_USERNAME:?Set PLAN_API_USERNAME}
+      PLAYER_ANALYTICS_PASSWORD: ${PLAN_API_PASSWORD:?Set PLAN_API_PASSWORD}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      PTERODACTYL_PANEL_URL: ${PTERODACTYL_PANEL_URL:-}
+      PTERODACTYL_MINECRAFT_SERVER_ID: ${PTERODACTYL_MINECRAFT_SERVER_ID:-}
+      PTERODACTYL_CLIENT_API_KEY: ${PTERODACTYL_CLIENT_API_KEY:-}
+      PLUGIN_UPDATES_CHANNEL_ID: ${PLUGIN_UPDATES_CHANNEL_ID:-}
+      PLUGIN_UPDATES_FILE: /app/data/plugins.json
+      PLUGIN_UPDATES_STATE_FILE: /app/state/plugin-update-state.json
+      BOT_STATE_DIR: /app/state
+    volumes:
+      - bot-state:/app/state
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
+    command: ["sh", "-c", 'exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"']
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  bot-state:
+  redis-data:

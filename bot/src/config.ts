@@ -20,8 +20,7 @@ if (
   !DISCORD_LOG_WEBHOOK_URL ||
   !PLAYER_ANALYTICS_URL ||
   !PLAYER_ANALYTICS_USERNAME ||
-  !PLAYER_ANALYTICS_PASSWORD ||
-  !GITHUB_TOKEN
+  !PLAYER_ANALYTICS_PASSWORD
 ) {
   throw new Error("Missing environment variables");
 }

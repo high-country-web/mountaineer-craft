@@ -81,6 +81,15 @@ export default function Navbar() {
           fontSize={{ base: "12px", md: "13px" }}
           fontWeight="600"
         >
+          <Link
+            asChild
+            color={pathname === "/stats" ? "#ffcc00" : "#cccccc"}
+            _hover={{ color: "#ffcc00" }}
+          >
+            <NextLink href="/stats" aria-current={pathname === "/stats" ? "page" : undefined}>
+              Stats
+            </NextLink>
+          </Link>
           <Link asChild color={inPlayers ? "#ffcc00" : "#cccccc"} _hover={{ color: "#ffcc00" }}>
             <NextLink href="/players" aria-current={inPlayers ? "page" : undefined}>
               Players

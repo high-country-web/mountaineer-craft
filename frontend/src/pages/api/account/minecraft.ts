@@ -21,18 +21,18 @@ export default async function minecraft(req: NextApiRequest, res: NextApiRespons
       return res.status(response.status).json({ error: "access_required" });
     if (!response.ok) throw new Error("Account lookup unavailable");
     const data = await response.json();
-    if (["not_configured", "no_match", "ambiguous"].includes(data.status))
+    if (["not_configured", "not_linked"].includes(data.status))
       return res.status(200).json({ status: data.status });
     if (
-      data.status !== "matched" ||
+      data.status !== "linked" ||
       typeof data.uuid !== "string" ||
       !isPlayerSlug(data.uuid) ||
-      !isPlayer(data.player) ||
-      data.player.uuid.toLowerCase() !== data.uuid.toLowerCase()
+      (data.player !== null &&
+        (!isPlayer(data.player) || data.player.uuid.toLowerCase() !== data.uuid.toLowerCase()))
     ) {
       throw new Error("Invalid account response");
     }
-    return res.status(200).json({ status: "matched", uuid: data.uuid, player: data.player });
+    return res.status(200).json({ status: "linked", uuid: data.uuid, player: data.player });
   } catch {
     return res.status(503).json({ error: "minecraft_account_unavailable" });
   }

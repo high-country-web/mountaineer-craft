@@ -1,10 +1,12 @@
 import fs from "fs";
 import crypto from "crypto";
+import path from "node:path";
 import { EmbedBuilder, TextBasedChannel } from "discord.js";
 
-const RULES_PATH = "./src/data/rules.txt";
-const HASH_PATH = "./src/data/hash.txt";
-const DATA_PATH = "./src/data/rulesMessage.json";
+const RULES_PATH = process.env.RULES_FILE || "./src/data/rules.txt";
+const STATE_DIR = process.env.BOT_STATE_DIR || "./src/data";
+const HASH_PATH = path.join(STATE_DIR, "hash.txt");
+const DATA_PATH = path.join(STATE_DIR, "rulesMessage.json");
 
 interface RulesData {
   channelId: string;
@@ -29,16 +31,19 @@ export function readHash(): string | null {
 
 // Write hash
 export function writeHash(hash: string): void {
+  fs.mkdirSync(STATE_DIR, { recursive: true });
   fs.writeFileSync(HASH_PATH, hash);
 }
 
 // Load rules.json
 export function loadData(): RulesData {
-  return JSON.parse(fs.readFileSync(DATA_PATH, "utf8"));
+  const source = fs.existsSync(DATA_PATH) ? DATA_PATH : "./src/data/rulesMessage.json";
+  return JSON.parse(fs.readFileSync(source, "utf8"));
 }
 
 // Save rules.json
 export function saveData(data: RulesData): void {
+  fs.mkdirSync(STATE_DIR, { recursive: true });
   fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2));
 }
 

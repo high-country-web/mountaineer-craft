@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.env.*
+.git
+*.log
+data/plugin-update-state.json*
+src/data/hash.txt

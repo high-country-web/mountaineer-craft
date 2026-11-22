@@ -8,6 +8,10 @@
 See [frontend setup](frontend/README.md) and [backend configuration](backend/readme.md)
 for service-specific instructions.
 
+For production bot/API images, GHCR publishing, and deployment through Coolify,
+see [the Coolify setup guide](deploy/COOLIFY.md). The stack is defined in
+`compose.production.yaml`; the frontend keeps its existing deployment.
+
 ## Code formatting
 
 Install the shared formatter from the repository root:

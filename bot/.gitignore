@@ -1,5 +1,6 @@
 node_modules
 .env
-package-lock.json
 dist
 src/data/hash.txt
+data/plugin-update-state.json
+data/plugin-update-state.json.tmp

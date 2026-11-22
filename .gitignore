@@ -47,6 +47,7 @@ yarn-error.log*
 next-env.d.ts
 package-lock.json
 !/package-lock.json
+!/bot/package-lock.json
 
 # golang
 # Binaries for programs and plugins

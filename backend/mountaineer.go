@@ -4,12 +4,13 @@ import (
 	"backend/routes"
 	"backend/utils"
 	"log"
+	"os"
 
 	"github.com/joho/godotenv"
 )
 
 func init() {
-	if err := godotenv.Load(".env"); err != nil {
+	if err := godotenv.Load(".env"); err != nil && !os.IsNotExist(err) {
 		log.Println("Error loading .env file")
 	}
 }

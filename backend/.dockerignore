@@ -1,0 +1,8 @@
+.env
+.env.*
+.git
+*.exe
+*.test
+*.log
+backend
+main

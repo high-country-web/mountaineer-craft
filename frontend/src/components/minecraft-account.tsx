@@ -6,8 +6,8 @@ import { PlayerSkin } from "@/components/players";
 import { playtime, type Player } from "@/lib/players";
 
 type Account =
-  | { status: "matched"; uuid: string; player: Player }
-  | { status: "no_match" | "ambiguous" | "not_configured" | "unavailable" };
+  | { status: "linked"; uuid: string; player: Player | null }
+  | { status: "not_linked" | "not_configured" | "unavailable" };
 
 export default function MinecraftAccount({ discordId }: { discordId: string }) {
   const [account, setAccount] = useState<Account | null>(null);
@@ -44,19 +44,21 @@ export default function MinecraftAccount({ discordId }: { discordId: string }) {
           <Spinner size="sm" color="#ffcc00" />
           <Text>Finding your player profile…</Text>
         </Flex>
-      ) : account.status === "matched" ? (
+      ) : account.status === "linked" ? (
         <Flex direction={{ base: "column", sm: "row" }} gap={5} align="center">
-          <Box w="120px" flexShrink={0}>
-            <PlayerSkin player={account.player} />
-          </Box>
+          {account.player && (
+            <Box w="120px" flexShrink={0}>
+              <PlayerSkin player={account.player} />
+            </Box>
+          )}
           <Box minW={0} w="full">
             <Text color="#ffcc00" fontSize="12px" mb={2}>
-              Suggested player profile
+              Verified Minecraft account
             </Text>
             <Heading as="h3" fontSize="24px" overflowWrap="anywhere" mb={3}>
-              {account.player.name}
+              {account.player?.name || "Minecraft account linked"}
             </Heading>
-            {account.player.active_playtime != null && (
+            {account.player?.active_playtime != null && (
               <Text color="#aaaaaa" mb={2}>
                 {playtime(account.player.active_playtime)} active playtime
               </Text>
@@ -65,26 +67,40 @@ export default function MinecraftAccount({ discordId }: { discordId: string }) {
               {account.uuid}
             </Text>
             <Text color="#aaaaaa" fontSize="13px" lineHeight="1.7" mt={3}>
-              Matched to your Discord username in Plan. This is a suggestion, not a verified account
-              link.
+              Linked to your Discord account through the Minecraft server’s verification process.
+              {!account.player &&
+                " Your player stats are currently unavailable. Check again shortly."}
             </Text>
-            <Button asChild mt={5} bg="#ffcc00" color="#090909" _hover={{ bg: "#ffdb4d" }}>
-              <NextLink href={`/players/${account.uuid}`}>
-                View player profile <LuArrowRight />
-              </NextLink>
+            {account.player && (
+              <Button asChild mt={5} bg="#ffcc00" color="#090909" _hover={{ bg: "#ffdb4d" }}>
+                <NextLink href={`/players/${account.uuid}`}>
+                  View player profile <LuArrowRight />
+                </NextLink>
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              color="#ffcc00"
+              borderColor="#ffffff30"
+              mt={5}
+              ml={account.player ? 3 : 0}
+              onClick={() => {
+                setAccount(null);
+                setRefresh((value) => value + 1);
+              }}
+            >
+              Check again
             </Button>
           </Box>
         </Flex>
       ) : (
         <>
           <Text color="#aaaaaa" lineHeight="1.8">
-            {account.status === "no_match"
-              ? "No player profile currently matches your Discord username in Plan. If you recently linked or renamed your account, Plan may need time to update. You can still find your profile in the player directory."
-              : account.status === "ambiguous"
-                ? "More than one player profile matches your Discord username. Choose your profile from the player directory."
-                : account.status === "not_configured"
-                  ? "Automatic Minecraft account lookup is coming soon. You can explore player profiles in the meantime."
-                  : "We couldn’t check your Minecraft account right now. Your Discord sign-in is still active. Please try again in a moment."}
+            {account.status === "not_linked"
+              ? "No Minecraft account is linked to this Discord account yet. Connect to the Minecraft server and submit its verification code in Discord, then check again here. Make sure you sign in with the same Discord account you used to verify."
+              : account.status === "not_configured"
+                ? "Automatic Minecraft account lookup is coming soon. You can explore player profiles in the meantime."
+                : "We couldn’t check your Minecraft account right now. Your Discord sign-in is still active. Please try again in a moment."}
           </Text>
           <Flex wrap="wrap" gap={3} mt={5}>
             {account.status !== "not_configured" && (

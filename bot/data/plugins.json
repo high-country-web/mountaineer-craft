@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 1,
+  "minecraftVersion": null,
+  "plugins": [
+    {
+      "name": "Chunky",
+      "installedVersion": null,
+      "source": {
+        "type": "modrinth",
+        "project": "chunky",
+        "loaders": ["paper", "spigot", "bukkit"]
+      }
+    },
+    {
+      "name": "Pl3xMapExtras",
+      "installedVersion": null,
+      "source": {
+        "type": "modrinth",
+        "project": "pl3xmapextras",
+        "loaders": ["paper"]
+      }
+    },
+    {
+      "name": "Back",
+      "installedVersion": null,
+      "source": {
+        "type": "manual",
+        "reason": "Multiple plugins use this name; confirm its author or download page."
+      }
+    },
+    {
+      "name": "DiscordSRV",
+      "installedVersion": null,
+      "source": {
+        "type": "github",
+        "repo": "DiscordSRV/DiscordSRV"
+      }
+    },
+    {
+      "name": "Essentials",
+      "installedVersion": null,
+      "source": {
+        "type": "github",
+        "repo": "EssentialsX/Essentials"
+      }
+    },
+    {
+      "name": "EssentialsChat",
+      "installedVersion": null,
+      "source": {
+        "type": "github",
+        "repo": "EssentialsX/Essentials"
+      }
+    },
+    {
+      "name": "EssentialsSpawn",
+      "installedVersion": null,
+      "source": {
+        "type": "github",
+        "repo": "EssentialsX/Essentials"
+      }
+    },
+    {
+      "name": "floodgate",
+      "installedVersion": null,
+      "source": {
+        "type": "manual",
+        "reason": "Uses GeyserMC development builds; verify the installed build on the official download page.",
+        "url": "https://geysermc.org/download/?project=floodgate"
+      }
+    },
+    {
+      "name": "Geyser-Spigot",
+      "installedVersion": null,
+      "source": {
+        "type": "manual",
+        "reason": "Uses GeyserMC development builds; a SNAPSHOT version alone cannot identify the installed build.",
+        "url": "https://geysermc.org/download/?project=geyser"
+      }
+    },
+    {
+      "name": "GriefPrevention",
+      "installedVersion": null,
+      "source": {
+        "type": "github",
+        "repo": "GriefPrevention/GriefPrevention"
+      }
+    },
+    {
+      "name": "GrimAC",
+      "installedVersion": null,
+      "source": {
+        "type": "github",
+        "repo": "GrimAnticheat/Grim"
+      }
+    },
+    {
+      "name": "GSit",
+      "installedVersion": null,
+      "source": {
+        "type": "github",
+        "repo": "gecolay/GSit"
+      }
+    },
+    {
+      "name": "InvSeePlusPlus",
+      "installedVersion": null,
+      "aliases": ["InvSee++"],
+      "source": {
+        "type": "github",
+        "repo": "Jannyboy11/InvSee-plus-plus"
+      }
+    },
+    {
+      "name": "KeepChunks",
+      "installedVersion": null,
+      "source": {
+        "type": "github",
+        "repo": "Geitenijs/KeepChunks"
+      }
+    },
+    {
+      "name": "LogCleaner",
+      "installedVersion": null,
+      "source": {
+        "type": "manual",
+        "reason": "Multiple plugins use this name; confirm the author before choosing an update source."
+      }
+    },
+    {
+      "name": "LuckPerms",
+      "installedVersion": null,
+      "stripSuffixes": ["-bukkit"],
+      "source": {
+        "type": "modrinth",
+        "project": "luckperms",
+        "loaders": ["paper", "spigot", "bukkit"]
+      }
+    },
+    {
+      "name": "Offlinetp",
+      "installedVersion": null,
+      "source": {
+        "type": "manual",
+        "reason": "Several OfflineTP plugins exist; confirm the author or original download page."
+      }
+    },
+    {
+      "name": "Pl3xMap",
+      "installedVersion": null,
+      "source": {
+        "type": "modrinth",
+        "project": "pl3xmap",
+        "loaders": ["paper", "spigot", "bukkit"]
+      }
+    },
+    {
+      "name": "PlaceholderAPI",
+      "installedVersion": null,
+      "source": {
+        "type": "github",
+        "repo": "PlaceholderAPI/PlaceholderAPI"
+      }
+    },
+    {
+      "name": "Plan",
+      "installedVersion": null,
+      "source": {
+        "type": "github",
+        "repo": "plan-player-analytics/Plan"
+      }
+    },
+    {
+      "name": "Shopkeepers",
+      "installedVersion": null,
+      "source": {
+        "type": "spiget",
+        "resource": 80756
+      }
+    },
+    {
+      "name": "TAB",
+      "installedVersion": null,
+      "source": {
+        "type": "github",
+        "repo": "NEZNAMY/TAB"
+      }
+    },
+    {
+      "name": "Vault",
+      "installedVersion": null,
+      "source": {
+        "type": "github",
+        "repo": "MilkBowl/Vault"
+      }
+    }
+  ]
+}
