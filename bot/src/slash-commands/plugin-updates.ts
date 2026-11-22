@@ -1,7 +1,7 @@
 import { MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import type { SlashCommand } from "../types/command.js";
 import { runPluginCheck } from "../utils/pluginUpdates.js";
-import { pluginUpdateEmbeds } from "../utils/pluginUpdateEmbeds.js";
+import { buildPluginUpdateEmbed } from "../utils/pluginUpdateEmbeds.js";
 
 const command: SlashCommand = {
   data: new SlashCommandBuilder()
@@ -22,17 +22,11 @@ const command: SlashCommand = {
     await interaction.deferReply();
     try {
       const report = await runPluginCheck();
-      const embeds = pluginUpdateEmbeds(report, report.results);
+      const { embed } = buildPluginUpdateEmbed(report, report.results);
       await interaction.editReply({
-        embeds: [embeds[0]],
+        embeds: [embed],
         allowedMentions: { parse: [] },
       });
-      for (const embed of embeds.slice(1)) {
-        await interaction.followUp({
-          embeds: [embed],
-          allowedMentions: { parse: [] },
-        });
-      }
     } catch (error) {
       await interaction.editReply({
         content: error instanceof Error ? error.message : "Plugin check unavailable.",

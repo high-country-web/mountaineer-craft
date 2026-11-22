@@ -1,64 +1,79 @@
 import { EmbedBuilder, escapeMarkdown } from "discord.js";
-import type { PluginReport, UpdateStatus } from "./pluginUpdates.js";
+import type { PluginReport, PluginResult, UpdateStatus } from "./pluginUpdates.js";
 
-export const PLUGINS_PER_EMBED = 4;
-
-const statusLabels: Record<UpdateStatus, string> = {
-  update_available: "Update available",
-  up_to_date: "Up to date",
-  ahead: "Installed version is newer",
-  unknown_installed: "Installed version needed",
-  review: "Version comparison needs review",
-  manual: "Manual check needed",
-  error: "Source check failed",
+const priority: Record<UpdateStatus, number> = {
+  update_available: 0,
+  error: 1,
+  review: 2,
+  unknown_installed: 3,
+  manual: 4,
+  up_to_date: 5,
+  ahead: 6,
 };
 
-// Four fields leave room for long version strings and setup notices.
-export function pluginUpdateEmbeds(
+export function buildPluginUpdateEmbed(
   report: PluginReport,
   entries = report.results.filter((plugin) => plugin.status === "update_available"),
-): EmbedBuilder[] {
-  const updateCount = entries.filter((plugin) => plugin.status === "update_available").length;
+): { embed: EmbedBuilder; shown: PluginResult[] } {
+  const updates = entries.filter((plugin) => plugin.status === "update_available").length;
   const unresolved = report.results.filter((plugin) =>
     ["manual", "review", "unknown_installed", "error"].includes(plugin.status),
   ).length;
-  const pages = Math.max(1, Math.ceil(entries.length / PLUGINS_PER_EMBED));
-  const clean = (value: string) => escapeMarkdown(value.replace(/[\r\n]/g, " ").slice(0, 120));
-  const embeds: EmbedBuilder[] = [];
-  for (let page = 0; page < pages; page++) {
-    const embed = new EmbedBuilder()
-      .setTitle(
-        updateCount ? "Minecraft plugin updates available" : "Minecraft plugin update check",
-      )
-      .setColor(updateCount || unresolved ? 0xffcc00 : 0x7b9e87)
-      .setDescription(
-        [
-          updateCount
-            ? `**${updateCount} plugin update(s) available.**`
-            : "No confirmed plugin updates were found.",
-          `${report.results.length} plugins checked${unresolved ? `; ${unresolved} need version information or review` : ""}.`,
-          "Review Minecraft compatibility before installing.",
-          ...report.notes.map((note) => escapeMarkdown(note).slice(0, 350)),
-        ]
-          .join("\n")
-          .slice(0, 1000),
-      )
-      .setTimestamp(new Date(report.checkedAt))
-      .setFooter({
-        text: `Mountaineer Craft | Page ${page + 1}/${pages} | No plugins installed automatically`,
-      });
-    for (const plugin of entries.slice(page * PLUGINS_PER_EMBED, (page + 1) * PLUGINS_PER_EMBED)) {
-      embed.addFields({
-        name: clean(plugin.name).slice(0, 100),
-        value:
-          `**${statusLabels[plugin.status]}**\nInstalled: **${clean(plugin.installed ?? "unknown")}**\nLatest: **${clean(plugin.latest ?? "unknown")}**${plugin.note ? `\n${escapeMarkdown(plugin.note).slice(0, 300)}` : ""}${plugin.url ? `\n[View release](${plugin.url})` : ""}`.slice(
-            0,
-            1024,
-          ),
-        inline: false,
-      });
+  const clean = (value: string, limit = 40) =>
+    escapeMarkdown(value.replace(/[\r\n]/g, " ").slice(0, limit));
+  const version = (value: string | null) =>
+    (value ?? "unknown").replace(/[`\r\n]/g, "").slice(0, 32);
+  const lines = [
+    `**${updates} update(s) available** · ${report.results.length} checked${unresolved ? ` · ${unresolved} need review` : ""}`,
+    ...report.notes.slice(0, 3).map((note) => clean(note, 160)),
+    "",
+  ];
+  const shown: PluginResult[] = [];
+  const sorted = [...entries].sort((a, b) => priority[a.status] - priority[b.status]);
+  for (const plugin of sorted) {
+    const name = clean(plugin.name);
+    const linkedName =
+      plugin.status === "update_available" && plugin.url && plugin.url.length <= 220
+        ? `[${name}](<${plugin.url}>)`
+        : name;
+    let detail: string;
+    switch (plugin.status) {
+      case "update_available":
+        detail = `\`${version(plugin.installed)} → ${version(plugin.latest)}\``;
+        break;
+      case "up_to_date":
+        detail = `up to date · \`${version(plugin.installed)}\``;
+        break;
+      case "ahead":
+        detail = `installed newer · \`${version(plugin.installed)}\``;
+        break;
+      case "unknown_installed":
+        detail = `installed unknown · latest \`${version(plugin.latest)}\``;
+        break;
+      case "review":
+        detail = `review · \`${version(plugin.installed)} → ${version(plugin.latest)}\``;
+        break;
+      case "manual":
+        detail = `manual check${plugin.note ? ` · ${clean(plugin.note, 65)}` : ""}`;
+        break;
+      case "error":
+        detail = `check failed${plugin.note ? ` · ${clean(plugin.note, 65)}` : ""}`;
+        break;
     }
-    embeds.push(embed);
+    const line = `• **${linkedName}** — ${detail}`;
+    // Reserve space for an overflow notice; never split a row or a Markdown link.
+    if (lines.join("\n").length + line.length + 1 > 3900) break;
+    lines.push(line);
+    shown.push(plugin);
   }
-  return embeds;
+  const omitted = entries.length - shown.length;
+  if (omitted)
+    lines.push(`\n${omitted} additional result(s) omitted to keep this report in one embed.`);
+  const embed = new EmbedBuilder()
+    .setTitle(updates ? "Minecraft plugin updates" : "Minecraft plugin update check")
+    .setColor(updates || unresolved ? 0xffcc00 : 0x7b9e87)
+    .setDescription(lines.join("\n"))
+    .setTimestamp(new Date(report.checkedAt))
+    .setFooter({ text: "Mountaineer Craft | Check Minecraft compatibility before updating" });
+  return { embed, shown };
 }

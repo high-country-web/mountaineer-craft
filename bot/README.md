@@ -20,9 +20,10 @@ Geyser and Floodgate use manual entries because their development-build identity
 cannot be inferred from a generic SNAPSHOT version.
 
 Run `/plugin-updates` with Discord **Manage Server** permission to post public
-embeds in the current channel. The entire report is shown in embeds, including
+one compact embed in the current channel. The report includes
 installed/latest versions, release links, and results needing review. No text
-attachment is created. Longer reports use multiple embeds.
+attachment is created. Updates appear first, with one short row per plugin.
+If a report exceeds one embed's text limit, an omitted-results count is shown.
 Missing installed versions, unknown version
 formats, source failures, and manual entries are shown separately. The checker
 does not declare unfamiliar version strings outdated using loose coercion.

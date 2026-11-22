@@ -2,7 +2,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import type { Job } from "../types/job.js";
 import { runPluginCheck } from "../utils/pluginUpdates.js";
-import { PLUGINS_PER_EMBED, pluginUpdateEmbeds } from "../utils/pluginUpdateEmbeds.js";
+import { buildPluginUpdateEmbed } from "../utils/pluginUpdateEmbeds.js";
 import logger from "../utils/logger.js";
 
 let running = false;
@@ -47,18 +47,14 @@ const job: Job = {
         channel.guildId !== process.env.DISCORD_GUILD_ID
       )
         throw new Error("Plugin update channel must be a sendable channel in the configured guild");
-      const embeds = pluginUpdateEmbeds(report, updates);
-      for (let page = 0; page < embeds.length; page++) {
-        await channel.send({ embeds: [embeds[page]], allowedMentions: { parse: [] } });
-        for (const plugin of updates.slice(
-          page * PLUGINS_PER_EMBED,
-          (page + 1) * PLUGINS_PER_EMBED,
-        ))
-          sent[plugin.name] = JSON.stringify([plugin.installed, plugin.latest]);
-        await mkdir(dirname(path), { recursive: true });
-        await writeFile(path + ".tmp", JSON.stringify(sent, null, 2) + "\n", "utf8");
-        await rename(path + ".tmp", path);
-      }
+      const { embed, shown } = buildPluginUpdateEmbed(report, updates);
+      await channel.send({ embeds: [embed], allowedMentions: { parse: [] } });
+      // Omitted rows remain eligible for a later alert; don't mark them delivered.
+      for (const plugin of shown)
+        sent[plugin.name] = JSON.stringify([plugin.installed, plugin.latest]);
+      await mkdir(dirname(path), { recursive: true });
+      await writeFile(path + ".tmp", JSON.stringify(sent, null, 2) + "\n", "utf8");
+      await rename(path + ".tmp", path);
     } catch {
       logger.warn(
         "Plugin update check failed; check source access, channel permissions, and alert state storage.",
