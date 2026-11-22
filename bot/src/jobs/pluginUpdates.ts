@@ -17,7 +17,7 @@ const job: Job = {
     try {
       const report = await runPluginCheck();
       const path = resolve(
-        process.env.PLUGIN_UPDATES_STATE_FILE || "data/plugin-update-state.json",
+        process.env.PLUGIN_UPDATES_STATE_FILE || "src/data/plugin-update-state.json",
       );
       let sent: Record<string, string> = {};
       try {

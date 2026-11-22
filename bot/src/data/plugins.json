@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "minecraftVersion": null,
+  "minecraftVersion": 26.3,
   "plugins": [
     {
       "name": "Chunky",

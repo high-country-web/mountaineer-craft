@@ -331,7 +331,7 @@ let pending: Promise<PluginReport> | undefined;
 export function runPluginCheck(): Promise<PluginReport> {
   if (pending) return pending;
   pending = (async () => {
-    const path = resolve(process.env.PLUGIN_UPDATES_FILE || "data/plugins.json");
+    const path = resolve(process.env.PLUGIN_UPDATES_FILE || "src/data/plugins.json");
     let raw: string;
     try {
       raw = await readFile(path, "utf8");

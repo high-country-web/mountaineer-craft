@@ -45,6 +45,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+bot/src/data/plugin-update-state.json
 package-lock.json
 !/package-lock.json
 !/bot/package-lock.json

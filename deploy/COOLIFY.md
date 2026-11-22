@@ -37,7 +37,10 @@ the file into Coolify. Keep that copy synchronized if you choose this option.
 Paste the variables from `coolify.env.example` into this resource and replace all
 placeholders. Values are runtime settings, not Docker build arguments.
 
-- Use the existing Discord bot/OAuth application credentials and guild ID.
+- Set `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET` from the **Mountaineer Craft**
+  OAuth application. Set `DISCORD_TOKEN` and `BOT_DISCORD_CLIENT_ID` from the
+  **Mountaineer Helper** bot application. The bot token and bot application ID
+  must belong together; the two applications intentionally remain separate.
 - The Plan user must allow `/v1/player`, `/v1/playersTable`,
   `/v1/playersOnline`, and the players-online datapoint.
 - The three Panel settings enable account linking, resource stats, and startup
@@ -74,10 +77,10 @@ volumes: existing Redis sessions are not migrated, so users will need to sign in
 again after switching the API. Back up volumes normally; deleting the resource's
 volumes would remove this state.
 
-The tracking list is baked into the bot image at `/app/data/plugins.json`.
-Edit `bot/data/plugins.json` in Git and deploy a new image to update it. Runtime
+The plugin tracking list is baked into the bot image at `/app/src/data/plugins.json`.
+Edit `bot/src/data/plugins.json` in Git and deploy a new image to update it. Runtime
 state is separate at `/app/state`, so redeploys refresh the tracking list without
-discarding notification history. Do not mount over `/app` or `/app/data` unless
+discarding notification history. Do not mount over `/app` or `/app/src/data` unless
 you intend to manage the tracking list externally.
 
 ## 3. Connect deployments to GitHub Actions
