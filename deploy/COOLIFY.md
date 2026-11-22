@@ -49,9 +49,16 @@ placeholders. Values are runtime settings, not Docker build arguments.
   manual checks only. `GITHUB_TOKEN` is optional for the bot's release checks and
   is separate from the GitHub Actions token.
 
-Configure a domain on **backend** targeting container port **4002**, for example
-`https://api.mountaineercraft.net:4002` in Coolify's domain field. Only this service
-needs an HTTP domain. The bot is a background worker; give it no domain or HTTP
+The Compose file publishes the backend on **127.0.0.1:8080** for the existing
+Caddy running directly on the same Docker host. Keep its upstream set to
+`reverse_proxy 127.0.0.1:8080`, and leave the backend's **Coolify domain empty** so
+Caddy handles HTTPS. Ensure host port 8080 is free before deploying. This mapping
+is loopback-only; it does not publish the API port on the public interface.
+
+If using Coolify's integrated proxy instead, remove this host port mapping and
+configure a domain on **backend** targeting container port **4002**, such as
+`https://api.mountaineercraft.net:4002` in Coolify's domain field. Use one routing
+setup for the domain. The bot is a background worker; give it no domain or HTTP
 health check. Redis stays internal and has no published host port.
 
 The backend image includes `GET /health`, which checks Redis. Redis has its own
