@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 import path from "node:path";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
-//import createMDX from '@next/mdx'
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -17,12 +16,6 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["@chakra-ui/react"],
   },
 };
-
-// const withMDX = createMDX({
-//   // Add markdown plugins here, as desired
-// })
-
-// export default withMDX(nextConfig)
 
 export default nextConfig;
 

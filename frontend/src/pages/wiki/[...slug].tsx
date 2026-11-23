@@ -3,6 +3,7 @@ import NextLink from "next/link";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import { Box, Heading, Link, Text } from "@chakra-ui/react";
 import type { SystemStyleObject } from "@chakra-ui/react";
+import { LuPencil } from "react-icons/lu";
 import WikiLayout from "@/components/wiki/layout";
 import { getWikiArticle, getWikiArticles } from "@/lib/wiki";
 import type { WikiArticle } from "@/lib/wiki";
@@ -45,6 +46,21 @@ const articleStyles: SystemStyleObject = {
   "& blockquote": { borderLeft: "3px solid #ffcc00", pl: "20px", color: "#aaaaaa" },
   "& hr": { borderColor: "#ffffff20", my: "32px" },
   "& img": { maxW: "full", h: "auto", borderRadius: "6px" },
+  "& table": {
+    width: "full",
+    borderCollapse: "collapse",
+    my: "1.5em",
+    fontSize: "15px",
+  },
+  "& th, & td": {
+    border: "1px solid #ffffff24",
+    px: { base: 3, sm: 4 },
+    py: 2,
+    textAlign: "left",
+    verticalAlign: "top",
+  },
+  "& th": { bg: "#ffffff0b", color: "#f5f5f5", fontWeight: "600" },
+  "& tr:nth-of-type(even) td": { bg: "#ffffff04" },
 };
 
 type Props = {
@@ -85,6 +101,23 @@ export default function WikiArticlePage({
       >
         {article.title}
       </Heading>
+      <Link
+        href={`https://github.com/high-country-web/mountaineer-craft/edit/main/wiki/${article.slug
+          .map(encodeURIComponent)
+          .join("/")}.md`}
+        target="_blank"
+        rel="noopener noreferrer"
+        display="inline-flex"
+        alignItems="center"
+        gap={2}
+        color="#ffcc00"
+        fontSize="14px"
+        mb={6}
+        _hover={{ color: "#ffe066" }}
+      >
+        <LuPencil aria-hidden="true" />
+        Edit this page on GitHub
+      </Link>
       {article.description && (
         <Text fontSize="18px" lineHeight="1.7" color="#aaaaaa" mb={8}>
           {article.description}

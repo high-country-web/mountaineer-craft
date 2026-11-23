@@ -13,7 +13,60 @@ export type WikiArticle = {
   empty: boolean;
 };
 
-type MarkdownNode = { type: string; url?: string; children?: MarkdownNode[] };
+type MarkdownNode = {
+  type: string;
+  url?: string;
+  value?: string;
+  align?: ("left" | "right" | "center" | null)[];
+  children?: MarkdownNode[];
+};
+
+function tableFromParagraph(node: MarkdownNode): MarkdownNode | null {
+  if (node.type !== "paragraph" || node.children?.length !== 1) return null;
+  const textNode = node.children[0];
+  if (textNode.type !== "text" || !textNode.value?.includes("\n")) return null;
+
+  const lines = textNode.value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (
+    lines.length < 2 ||
+    !lines[0].includes("|") ||
+    !/^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(lines[1])
+  ) {
+    return null;
+  }
+
+  const cells = (line: string) =>
+    line
+      .replace(/^\s*\|/, "")
+      .replace(/\|\s*$/, "")
+      .split(/(?<!\\)\|/)
+      .map((cell) => cell.trim().replace(/\\\|/g, "|"));
+  const headers = cells(lines[0]);
+  const separators = cells(lines[1]);
+  if (headers.length < 2 || separators.length !== headers.length) return null;
+
+  const align = separators.map((separator) => {
+    const left = separator.startsWith(":");
+    const right = separator.endsWith(":");
+    return left && right ? "center" : left ? "left" : right ? "right" : null;
+  });
+  const row = (values: string[]): MarkdownNode => ({
+    type: "tableRow",
+    children: values.map((value) => ({
+      type: "tableCell",
+      children: [{ type: "text", value }],
+    })),
+  });
+
+  return {
+    type: "table",
+    align,
+    children: [row(headers), ...lines.slice(2).map((line) => row(cells(line)))],
+  };
+}
 
 function humanize(value: string) {
   return value.replace(/[-_]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -55,7 +108,12 @@ export async function getWikiArticle(slug: string[]) {
   // Rewrite repository-relative Markdown links to their public wiki routes.
   const processor = remark()
     .use(() => (tree) => {
-      function visit(node: MarkdownNode) {
+      const root = tree as unknown as { children: MarkdownNode[] };
+      root.children = root.children.flatMap((node) => {
+        const table = tableFromParagraph(node as MarkdownNode);
+        return table ? [table] : [node];
+      });
+      function visit(node: { type?: string; url?: string; children?: MarkdownNode[] }) {
         if (node.type === "link" && node.url && !/^(?:[a-z][a-z\d+.-]*:|\/\/|#)/i.test(node.url)) {
           const match = node.url.match(/^([^?#]+)\.md([?#].*)?$/);
           if (match) {
@@ -65,7 +123,7 @@ export async function getWikiArticle(slug: string[]) {
         }
         node.children?.forEach(visit);
       }
-      visit(tree);
+      visit(root);
     })
     .use(html, { sanitize: true });
   return { ...article, html: String(await processor.process(body)) };
