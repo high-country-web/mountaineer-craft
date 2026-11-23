@@ -1,9 +1,9 @@
 ---
-title: Protect Your Builds
-description: Create a land claim and share access with GriefPrevention
+title: Claims and Land Protection
+description: Create land claims and share access safely with GriefPrevention
 ---
 
-# Protect Your Builds
+# Claims and Land Protection
 
 Mountaineer Craft uses GriefPrevention to protect player builds with land claims. Other players cannot build in or take items from a claim unless the owner gives them permission.
 
@@ -21,11 +21,11 @@ On Mountaineer Craft, a claim also protects the area above and below the marked 
 
 Use the command that matches the access you want to give:
 
-| Command | Permission granted |
-| --- | --- |
-| `/trust <player>` | Full build access in your claim. |
+| Command                    | Permission granted                                                                                      |
+| -------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `/trust <player>`          | Full build access in your claim.                                                                        |
 | `/containertrust <player>` | Use containers and other claim features such as crafting blocks and animals, without full build access. |
-| `/accesstrust <player>` | Use buttons, levers, and beds. |
+| `/accesstrust <player>`    | Use buttons, levers, and beds.                                                                          |
 
 Replace `<player>` with the player's Minecraft username. You can check existing permissions with `/trustlist` while standing in the claim. Use `/untrust <player>` to remove permissions you gave that player.
 

@@ -26,4 +26,4 @@ If you have not linked Minecraft yet, join the server and follow the existing ve
 
 `/whois` can show available information such as a player's in-game status, deaths, sessions, join dates, and last-seen time. The command is still being developed, so some results may be unavailable. Its lookup uses the Discord member's server nickname when one is set; otherwise, it uses their Discord username.
 
-For playtime analytics, visit [Plan analytics](https://analytics.mountaineercraft.net/register).
+For playtime analytics, follow the [Play Analytics guide](play-analytics.md) or go straight to [Plan registration](https://analytics.mountaineercraft.net/register).

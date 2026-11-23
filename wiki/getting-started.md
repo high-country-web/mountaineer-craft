@@ -42,10 +42,10 @@ You can also view the [online server map](https://map.mountaineercraft.net/).
 
 ## Player Analytics
 
-View your playtime analytics by registering at [analytics.mountaineercraft.net/register](https://analytics.mountaineercraft.net/register).
+Register for a player activity page using the [Play Analytics guide](guides/play-analytics.md).
 
 ## Nightly Restart
 
 The server restarts nightly at **12:15 AM Eastern Time** to refresh memory and allow updates to be applied. The server announces the restart 10, 5, and 1 minute beforehand. It should be back online in less than five minutes.
 
-For information about protecting your builds, see the [GriefPrevention guide](guides/grief-prevention.md). Please read the [server rules](rules.md) before playing.
+For information about protecting your builds, see [Claims and Land Protection](guides/grief-prevention.md). You can also read the [Play Analytics guide](guides/play-analytics.md) to register for your player activity page. Please read the [server rules](rules.md) before playing.
