@@ -2,5 +2,5 @@ node_modules
 .env
 dist
 src/data/hash.txt
-data/plugin-update-state.json
-data/plugin-update-state.json.tmp
+src/data/plugin-update-state.json
+src/data/plugin-update-state.json.tmp

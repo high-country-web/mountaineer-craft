@@ -19,27 +19,22 @@ const job: Job = {
       const path = resolve(
         process.env.PLUGIN_UPDATES_STATE_FILE || "src/data/plugin-update-state.json",
       );
-      let sent: Record<string, string> = {};
+      let messageId: string | undefined;
       try {
         const data: unknown = JSON.parse(await readFile(path, "utf8"));
-        if (
-          !data ||
-          typeof data !== "object" ||
-          Array.isArray(data) ||
-          !Object.values(data).every((value) => typeof value === "string")
-        )
+        if (!data || typeof data !== "object" || Array.isArray(data))
           throw new Error("Invalid alert state");
-        sent = data as Record<string, string>;
+        const storedMessageId = (data as { messageId?: unknown }).messageId;
+        if (typeof storedMessageId === "string") messageId = storedMessageId;
       } catch (error) {
         if (!(error && typeof error === "object" && "code" in error && error.code === "ENOENT"))
           throw new Error("Could not read plugin alert state; alerts paused to avoid duplicates");
       }
-      const updates = report.results.filter(
-        (plugin) =>
-          plugin.status === "update_available" &&
-          sent[plugin.name] !== JSON.stringify([plugin.installed, plugin.latest]),
+      const entries = report.results.filter((plugin) =>
+        ["update_available", "manual", "review", "unknown_installed", "error"].includes(
+          plugin.status,
+        ),
       );
-      if (!updates.length) return;
       const channel = await client.channels.fetch(channelID);
       if (
         !channel?.isSendable() ||
@@ -47,13 +42,24 @@ const job: Job = {
         channel.guildId !== process.env.DISCORD_GUILD_ID
       )
         throw new Error("Plugin update channel must be a sendable channel in the configured guild");
-      const { embed, shown } = buildPluginUpdateEmbed(report, updates);
-      await channel.send({ embeds: [embed], allowedMentions: { parse: [] } });
-      // Omitted rows remain eligible for a later alert; don't mark them delivered.
-      for (const plugin of shown)
-        sent[plugin.name] = JSON.stringify([plugin.installed, plugin.latest]);
+      const { embed } = buildPluginUpdateEmbed(report, entries);
+      if (messageId) {
+        try {
+          const existing = await channel.messages.fetch(messageId);
+          await existing.edit({ embeds: [embed], allowedMentions: { parse: [] } });
+        } catch (error) {
+          // Discord error 10008 means the saved message was deleted.
+          if (error && typeof error === "object" && "code" in error && error.code === 10008)
+            messageId = undefined;
+          else throw error;
+        }
+      }
+      if (!messageId) {
+        const message = await channel.send({ embeds: [embed], allowedMentions: { parse: [] } });
+        messageId = message.id;
+      }
       await mkdir(dirname(path), { recursive: true });
-      await writeFile(path + ".tmp", JSON.stringify(sent, null, 2) + "\n", "utf8");
+      await writeFile(path + ".tmp", JSON.stringify({ messageId }, null, 2) + "\n", "utf8");
       await rename(path + ".tmp", path);
     } catch {
       logger.warn(
