@@ -24,8 +24,8 @@
       "name": "Back",
       "installedVersion": null,
       "source": {
-        "type": "manual",
-        "reason": "Multiple plugins use this name; confirm its author or download page."
+        "type": "spiget",
+        "resource": 94702
       }
     },
     {
@@ -123,8 +123,9 @@
       "name": "LogCleaner",
       "installedVersion": null,
       "source": {
-        "type": "manual",
-        "reason": "Multiple plugins use this name; confirm the author before choosing an update source."
+        "type": "modrinth",
+        "project": "serverlogcleaner",
+        "loaders": ["paper", "spigot", "bukkit"]
       }
     },
     {
@@ -141,8 +142,9 @@
       "name": "Offlinetp",
       "installedVersion": null,
       "source": {
-        "type": "manual",
-        "reason": "Several OfflineTP plugins exist; confirm the author or original download page."
+        "type": "modrinth",
+        "project": "offlinetp",
+        "loaders": ["paper", "spigot", "bukkit"]
       }
     },
     {

@@ -275,39 +275,17 @@ async function resolvePlanServerId(): Promise<string> {
   const configured = process.env.PLAN_SERVER_ID?.trim();
   if (configured) return configured;
 
-  // A single-server Plan setup should work without making the server UUID a
-  // separate bot setting. Plan's network server list provides the UUID.
-  const response = await playerAnalyticsClient.request("/v1/network/servers");
+  // Plan's network metadata includes the server UUID without using the
+  // deprecated /v1/network/servers endpoint.
+  const response = await playerAnalyticsClient.request("/v1/networkMetadata");
   const payload: unknown = await response.json();
-  const ids = new Set<string>();
-  const visited = new Set<object>();
   const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  const visit = (value: unknown): void => {
-    if (!value || typeof value !== "object" || visited.has(value)) return;
-    visited.add(value);
-    if (Array.isArray(value)) {
-      for (const item of value) visit(item);
-      return;
-    }
-    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
-      const field = key.toLowerCase().replace(/[^a-z]/g, "");
-      if (
-        ["uuid", "serveruuid", "id"].includes(field) &&
-        typeof child === "string" &&
-        uuid.test(child)
-      )
-        ids.add(child);
-      visit(child);
-    }
-  };
-  visit(payload);
-  if (ids.size !== 1)
-    throw new Error(
-      ids.size
-        ? "Plan returned multiple servers; set PLAN_SERVER_ID to select one"
-        : "Could not find the Plan server UUID; check the Plan account's server-list permission",
-    );
-  return [...ids][0];
+  const servers = object(payload) && Array.isArray(payload.servers) ? payload.servers : [];
+  const firstServer = servers[0];
+  const serverId = object(firstServer) ? firstServer.serverUUID : undefined;
+  if (typeof serverId !== "string" || !uuid.test(serverId))
+    throw new Error("Plan network metadata did not include a valid first server UUID");
+  return serverId;
 }
 
 async function planInstalledVersions(): Promise<Map<string, string>> {
