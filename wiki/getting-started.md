@@ -24,16 +24,19 @@ See the full [connection guide](guides/connect-to-server.md) if you need help ad
 
 | Command          | What it does                                        |
 | ---------------- | --------------------------------------------------- |
-| `/warp Hub`      | Teleports you to the community hub.                 |
-| `/warp Farm`     | Teleports you to the community farm.                |
-| `/warp End`      | Teleports you to the End portal.                    |
-| `/warp Guardian` | Teleports you to the guardian farm.                 |
+| `/warp <name>`   | Teleports you to one of the server's public warps.  |
 | `/home`          | Returns you to your last spawn point.               |
 | `/tpask @player` | Asks a player if you can teleport to them.          |
 | `/tpaccept`      | Accepts a teleport request you received.            |
 | `/tpdeny`        | Denies a teleport request you received.             |
 | `/map`           | Shows the link to the online server map.            |
 | `/back`          | Safely returns you to your previous death location. |
+
+## Available Warps
+
+Use `/warp <name>` with one of these warp names:
+
+`CreeperFarm`, `End`, `EndCity`, `EnderFarm`, `Farm`, `Guardian`, `Hub`, `IceBlocks`, `IndustryCity`, `SkeletonFarm`, `SnowyVilla`, `Stone&Ore`, `Swamp`, `TradeHall`.
 
 You can also view the [online server map](https://map.mountaineercraft.net/).
 
