@@ -18,20 +18,22 @@ New players spawn at the community hub.
 
 Bedrock players can join the Java server through Geyser. Their usernames are marked with an asterisk (`*`) before the name in-game. See the [plugin list](plugins.md) for more information.
 
+See the full [connection guide](guides/connect-to-server.md) if you need help adding the server, or [Discord commands and your website profile](guides/discord-and-website.md) for the bot's `/connect`, `/map`, and `/link` commands.
+
 ## Useful Commands
 
-| Command | What it does |
-| --- | --- |
-| `/warp Hub` | Teleports you to the community hub. |
-| `/warp Farm` | Teleports you to the community farm. |
-| `/warp End` | Teleports you to the End portal. |
-| `/warp Guardian` | Teleports you to the guardian farm. |
-| `/home` | Returns you to your last spawn point. |
-| `/tpask @player` | Asks a player if you can teleport to them. |
-| `/tpaccept` | Accepts a teleport request you received. |
-| `/tpdeny` | Denies a teleport request you received. |
-| `/map` | Shows the link to the online server map. |
-| `/back` | Safely returns you to your previous death location. |
+| Command          | What it does                                        |
+| ---------------- | --------------------------------------------------- |
+| `/warp Hub`      | Teleports you to the community hub.                 |
+| `/warp Farm`     | Teleports you to the community farm.                |
+| `/warp End`      | Teleports you to the End portal.                    |
+| `/warp Guardian` | Teleports you to the guardian farm.                 |
+| `/home`          | Returns you to your last spawn point.               |
+| `/tpask @player` | Asks a player if you can teleport to them.          |
+| `/tpaccept`      | Accepts a teleport request you received.            |
+| `/tpdeny`        | Denies a teleport request you received.             |
+| `/map`           | Shows the link to the online server map.            |
+| `/back`          | Safely returns you to your previous death location. |
 
 You can also view the [online server map](https://map.mountaineercraft.net/).
 
