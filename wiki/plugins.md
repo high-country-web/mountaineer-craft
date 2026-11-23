@@ -17,9 +17,9 @@ Here are the plugins currently used on Mountaineer Craft and what they do.
 | GSit | Lets players sit, lay down, and use other simple poses. |
 | InvSeePlusPlus | Allows authorized staff to inspect and manage player inventories and ender chests. |
 | KeepChunks | Keeps selected chunks loaded when players are away. |
-| LogCleaner | Helps clean up old or unnecessary server log files. |
+| LogCleaner | Automatically cleans up old server logs and crash reports. |
 | LuckPerms | Manages player permissions, groups, and role inheritance. |
-| Offlinetp | Provides teleport commands for reaching players who are offline. |
+| Offlinetp | Lets staff teleport to an offline player's last known location. |
 | Pl3xMap | Creates a browser-based map of the Minecraft world. |
 | Pl3xMapExtras | Adds extra features to the Pl3xMap web map. |
 | PlaceholderAPI | Provides placeholders that other plugins can use to display dynamic information. |

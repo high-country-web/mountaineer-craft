@@ -5,14 +5,42 @@ description: First steps on MountaineerCraft
 
 # Getting Started
 
-Welcome to **MountaineerCraft**!
+Welcome to **Mountaineer Craft**! This page covers a few useful things to know when you join.
 
 ## First Join
 
-When you first join the server you will spawn at the hub.
+New players spawn at the community hub.
+
+### Connect to the server
+
+- **Java Edition:** `play.mountaineercraft.net`
+- **Bedrock Edition:** `bedrock.mountaineercraft.net`, port `19132`
+
+Bedrock players can join the Java server through Geyser. Their usernames are marked with an asterisk (`*`) before the name in-game. See the [plugin list](plugins.md) for more information.
 
 ## Useful Commands
 
-- `/wrp hub`
-- `/home`
-- `/tpa`
+| Command | What it does |
+| --- | --- |
+| `/warp Hub` | Teleports you to the community hub. |
+| `/warp Farm` | Teleports you to the community farm. |
+| `/warp End` | Teleports you to the End portal. |
+| `/warp Guardian` | Teleports you to the guardian farm. |
+| `/home` | Returns you to your last spawn point. |
+| `/tpask @player` | Asks a player if you can teleport to them. |
+| `/tpaccept` | Accepts a teleport request you received. |
+| `/tpdeny` | Denies a teleport request you received. |
+| `/map` | Shows the link to the online server map. |
+| `/back` | Safely returns you to your previous death location. |
+
+You can also view the [online server map](https://map.mountaineercraft.net/).
+
+## Player Analytics
+
+View your playtime analytics by registering at [analytics.mountaineercraft.net/register](https://analytics.mountaineercraft.net/register).
+
+## Nightly Restart
+
+The server restarts nightly at **12:15 AM Eastern Time** to refresh memory and allow updates to be applied. The server announces the restart 10, 5, and 1 minute beforehand. It should be back online in less than five minutes.
+
+For information about protecting your builds, see the [GriefPrevention guide](guides/grief-prevention.md). Please read the [server rules](rules.md) before playing.
