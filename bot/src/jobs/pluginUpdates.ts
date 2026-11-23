@@ -2,7 +2,10 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import type { Job } from "../types/job.js";
 import { runPluginCheck } from "../utils/pluginUpdates.js";
-import { buildPluginUpdateEmbed } from "../utils/pluginUpdateEmbeds.js";
+import {
+  buildPluginUpdateComponents,
+  buildPluginUpdateEmbed,
+} from "../utils/pluginUpdateEmbeds.js";
 import logger from "../utils/logger.js";
 
 let running = false;
@@ -46,7 +49,11 @@ const job: Job = {
       if (messageId) {
         try {
           const existing = await channel.messages.fetch(messageId);
-          await existing.edit({ embeds: [embed], allowedMentions: { parse: [] } });
+          await existing.edit({
+            embeds: [embed],
+            components: buildPluginUpdateComponents(),
+            allowedMentions: { parse: [] },
+          });
         } catch (error) {
           // Discord error 10008 means the saved message was deleted.
           if (error && typeof error === "object" && "code" in error && error.code === 10008)
@@ -55,7 +62,11 @@ const job: Job = {
         }
       }
       if (!messageId) {
-        const message = await channel.send({ embeds: [embed], allowedMentions: { parse: [] } });
+        const message = await channel.send({
+          embeds: [embed],
+          components: buildPluginUpdateComponents(),
+          allowedMentions: { parse: [] },
+        });
         messageId = message.id;
       }
       await mkdir(dirname(path), { recursive: true });

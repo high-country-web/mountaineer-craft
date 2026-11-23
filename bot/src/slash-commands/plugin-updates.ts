@@ -1,7 +1,10 @@
 import { MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import type { SlashCommand } from "../types/command.js";
 import { runPluginCheck } from "../utils/pluginUpdates.js";
-import { buildPluginUpdateEmbed } from "../utils/pluginUpdateEmbeds.js";
+import {
+  buildPluginUpdateComponents,
+  buildPluginUpdateEmbed,
+} from "../utils/pluginUpdateEmbeds.js";
 
 const command: SlashCommand = {
   data: new SlashCommandBuilder()
@@ -25,6 +28,7 @@ const command: SlashCommand = {
       const { embed } = buildPluginUpdateEmbed(report, report.results);
       await interaction.editReply({
         embeds: [embed],
+        components: buildPluginUpdateComponents(),
         allowedMentions: { parse: [] },
       });
     } catch (error) {

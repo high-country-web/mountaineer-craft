@@ -1,4 +1,10 @@
-import { REST, Routes, Interaction, MessageFlags } from "discord.js";
+import {
+  REST,
+  Routes,
+  Interaction,
+  MessageFlags,
+  PermissionFlagsBits,
+} from "discord.js";
 
 import fs from "fs";
 import path from "path";
@@ -10,6 +16,12 @@ import Logger from "./utils/logger.js";
 import { ExtendedClient } from "./types/client.js";
 import { rolePanel } from "./data/rolePanel.js";
 import playerAnalyticsClient from "./utils/playerAnalyticsClient.js";
+import {
+  buildPluginUpdateComponents,
+  buildPluginUpdateEmbed,
+  pluginUpdateRefreshButtonId,
+} from "./utils/pluginUpdateEmbeds.js";
+import { runPluginCheck } from "./utils/pluginUpdates.js";
 
 Logger.start();
 
@@ -66,6 +78,38 @@ const start = async () => {
     // BUTTON INTERACTIONS
     if (interaction.isButton()) {
       if (!interaction.guild) return;
+
+      if (interaction.customId === pluginUpdateRefreshButtonId) {
+        if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
+          await interaction.reply({
+            content: "You need Manage Server permission to refresh plugin updates.",
+            flags: MessageFlags.Ephemeral,
+          });
+          return;
+        }
+        await interaction.deferUpdate();
+        try {
+          const report = await runPluginCheck(true);
+          const entries = report.results.filter((plugin) =>
+            ["update_available", "manual", "review", "unknown_installed", "error"].includes(
+              plugin.status,
+            ),
+          );
+          const { embed } = buildPluginUpdateEmbed(report, entries);
+          await interaction.message.edit({
+            embeds: [embed],
+            components: buildPluginUpdateComponents(),
+            allowedMentions: { parse: [] },
+          });
+        } catch (error) {
+          Logger.error(`Plugin update refresh failed: ${error}`);
+          await interaction.followUp({
+            content: "Couldn't refresh plugin updates. Check the bot logs and Plan connection.",
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+        return;
+      }
 
       const roleConfig = rolePanel.roles.find((r) => r.customId === interaction.customId);
       if (!roleConfig) return;

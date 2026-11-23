@@ -1,5 +1,25 @@
-import { EmbedBuilder, escapeMarkdown } from "discord.js";
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  EmbedBuilder,
+  escapeMarkdown,
+} from "discord.js";
 import type { PluginReport, PluginResult, UpdateStatus } from "./pluginUpdates.js";
+
+export const pluginUpdateRefreshButtonId = "plugin-updates:refresh";
+
+export function buildPluginUpdateComponents(): ActionRowBuilder<ButtonBuilder>[] {
+  return [
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId(pluginUpdateRefreshButtonId)
+        .setLabel("Refresh")
+        .setEmoji("🔄")
+        .setStyle(ButtonStyle.Secondary),
+    ),
+  ];
+}
 
 const priority: Record<UpdateStatus, number> = {
   update_available: 0,

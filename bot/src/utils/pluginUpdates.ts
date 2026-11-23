@@ -386,7 +386,7 @@ export async function checkPlugins(
 
 let cached: { raw: string; until: number; report: PluginReport } | undefined;
 let pending: Promise<PluginReport> | undefined;
-export function runPluginCheck(): Promise<PluginReport> {
+export function runPluginCheck(forceRefresh = false): Promise<PluginReport> {
   if (pending) return pending;
   pending = (async () => {
     const path = resolve(process.env.PLUGIN_UPDATES_FILE || "src/data/plugins.json");
@@ -396,7 +396,8 @@ export function runPluginCheck(): Promise<PluginReport> {
     } catch {
       throw new Error("Cannot read plugin tracking file; configure PLUGIN_UPDATES_FILE");
     }
-    if (cached && cached.raw === raw && cached.until > Date.now()) return cached.report;
+    if (!forceRefresh && cached && cached.raw === raw && cached.until > Date.now())
+      return cached.report;
     let manifest: PluginManifest;
     try {
       manifest = parsePluginManifest(JSON.parse(raw));
