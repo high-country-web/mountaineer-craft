@@ -8,7 +8,7 @@ let retryAt = 0;
 
 const job: Job = {
   name: "playersOnline",
-  interval: 60000, // every minute
+  interval: 120000, // every 2 minutee
   runOnStart: true,
 
   async run(client) {
